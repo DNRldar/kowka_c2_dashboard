@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kowka GEN 7 - Systems Management</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/systems.css">
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">KOWKA GEN 7</h1>
+                <div class="system-status">
+                    <span class="status-indicator operational"></span>
+                    <span>OPERATIONAL</span>
+                </div>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <img src="assets/icons/dashboard.svg" alt="Dashboard" class="nav-icon">
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="intelligence.html" class="nav-link">
+                        <img src="assets/icons/intelligence.svg" alt="Intelligence" class="nav-icon">
+                        <span>Intelligence</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="systems.html" class="nav-link">
+                        <img src="assets/icons/systems.svg" alt="Systems" class="nav-icon">
+                        <span>Systems</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="financial.html" class="nav-link">
+                        <img src="assets/icons/financial-data.svg" alt="Financial" class="nav-icon">
+                        <span>Financial</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="logs.html" class="nav-link">
+                        <img src="assets/icons/logs.svg" alt="Logs" class="nav-icon">
+                        <span>Logs</span>
+                    </a>
+                </li>
+                <li class="nav-item destructive">
+                    <a href="destruction.html" class="nav-link">
+                        <img src="assets/icons/destruction-protocol.svg" alt="Destruction" class="nav-icon">
+                        <span>Destruction</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="operator-info">
+                    <div class="operator-name">OPERATOR: [CLASSIFIED]</div>
+                    <div class="session-time">SESSION: 01:28:12</div>
+                </div>
+                <button class="logout-btn" onclick="emergencyLogout()">EMERGENCY LOGOUT</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h2>Systems Management & Agent Control</h2>
+                <div class="header-actions">
+                    <div class="time-display" id="currentTime">2025-01-19 15:28:12 UTC</div>
+                    <button class="btn btn-primary" onclick="deployNewAgent()">DEPLOY NEW AGENT</button>
+                </div>
+            </header>
+
+            <!-- Agent Management -->
+            <div class="systems-section">
+                <div class="widget agent-management">
+                    <h3>Active Agent Management</h3>
+                    <div class="agent-controls">
+                        <div class="control-group">
+                            <input type="text" id="agentSearch" placeholder="Search agents..." onkeyup="searchAgents()">
+                            <select id="agentStatusFilter" onchange="filterAgents()">
+                                <option value="ALL">ALL STATUS</option>
+                                <option value="ACTIVE">ACTIVE</option>
+                                <option value="INACTIVE">INACTIVE</option>
+                                <option value="COMPROMISED">COMPROMISED</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-secondary" onclick="bulkAgentCommand()">BULK COMMAND</button>
+                    </div>
+                    <div class="agents-table-container">
+                        <table class="agents-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAllAgents" onchange="toggleSelectAllAgents()"></th>
+                                    <th>Agent ID</th>
+                                    <th>Status</th>
+                                    <th>Last Check-in</th>
+                                    <th>System Profile</th>
+                                    <th>Risk Level</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="agentsTableBody">
+                                <!-- Agent rows will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Components -->
+            <div class="components-section">
+                <div class="widget system-components">
+                    <h3>System Components Status</h3>
+                    <div class="components-grid">
+                        <div class="component-card">
+                            <div class="component-icon">🔒</div>
+                            <div class="component-info">
+                                <h4>Cryptographic Core</h4>
+                                <div class="component-status operational">OPERATIONAL</div>
+                                <div class="component-metrics">
+                                    <span>Key Rotation: 23h remaining</span>
+                                    <span>Encryption: AES-256-GCM Active</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="manageCryptoCore()">MANAGE</button>
+                        </div>
+
+                        <div class="component-card">
+                            <div class="component-icon">🧠</div>
+                            <div class="component-info">
+                                <h4>Memory Operations</h4>
+                                <div class="component-status operational">STEALTH MODE</div>
+                                <div class="component-metrics">
+                                    <span>Processes: 14 injected</span>
+                                    <span>Detection Risk: 0.2%</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="manageMemoryOps()">MANAGE</button>
+                        </div>
+
+                        <div class="component-card">
+                            <div class="component-icon">🌐</div>
+                            <div class="component-info">
+                                <h4>Network Operations</h4>
+                                <div class="component-status operational">ACTIVE</div>
+                                <div class="component-metrics">
+                                    <span>Channels: 8 active</span>
+                                    <span>Throughput: 2.1 MB/s</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="manageNetworkOps()">MANAGE</button>
+                        </div>
+
+                        <div class="component-card">
+                            <div class="component-icon">🛡️</div>
+                            <div class="component-info">
+                                <h4>Security Subsystem</h4>
+                                <div class="component-status operational">SECURE</div>
+                                <div class="component-metrics">
+                                    <span>Threats: 0 active</span>
+                                    <span>Last Scan: 5m ago</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="manageSecurity()">MANAGE</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Configuration -->
+            <div class="configuration-section">
+                <div class="widget system-configuration">
+                    <h3>System Configuration</h3>
+                    <div class="config-tabs">
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="openConfigTab('network')">Network</button>
+                            <button class="tab-btn" onclick="openConfigTab('security')">Security</button>
+                            <button class="tab-btn" onclick="openConfigTab('persistence')">Persistence</button>
+                            <button class="tab-btn" onclick="openConfigTab('behavioral')">Behavioral</button>
+                        </div>
+                        
+                        <div id="networkTab" class="tab-content active">
+                            <div class="config-form">
+                                <div class="form-group">
+                                    <label for="c2Channels">C2 Channels</label>
+                                    <select id="c2Channels" multiple>
+                                        <option value="github" selected>GitHub
