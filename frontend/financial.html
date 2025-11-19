@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kowka GEN 7 - Financial Intelligence</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/financial.css">
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">KOWKA GEN 7</h1>
+                <div class="system-status">
+                    <span class="status-indicator operational"></span>
+                    <span>OPERATIONAL</span>
+                </div>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <img src="assets/icons/dashboard.svg" alt="Dashboard" class="nav-icon">
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="intelligence.html" class="nav-link">
+                        <img src="assets/icons/intelligence.svg" alt="Intelligence" class="nav-icon">
+                        <span>Intelligence</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="systems.html" class="nav-link">
+                        <img src="assets/icons/systems.svg" alt="Systems" class="nav-icon">
+                        <span>Systems</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="financial.html" class="nav-link">
+                        <img src="assets/icons/financial-data.svg" alt="Financial" class="nav-icon">
+                        <span>Financial</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="logs.html" class="nav-link">
+                        <img src="assets/icons/logs.svg" alt="Logs" class="nav-icon">
+                        <span>Logs</span>
+                    </a>
+                </li>
+                <li class="nav-item destructive">
+                    <a href="destruction.html" class="nav-link">
+                        <img src="assets/icons/destruction-protocol.svg" alt="Destruction" class="nav-icon">
+                        <span>Destruction</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="operator-info">
+                    <div class="operator-name">OPERATOR: [CLASSIFIED]</div>
+                    <div class="session-time">SESSION: 01:45:33</div>
+                </div>
+                <button class="logout-btn" onclick="emergencyLogout()">EMERGENCY LOGOUT</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h2>Financial Intelligence & Asset Management</h2>
+                <div class="header-actions">
+                    <div class="time-display" id="currentTime">2025-01-19 15:45:33 UTC</div>
+                    <button class="btn btn-primary" onclick="initiateAssetRecovery()">INITIATE ASSET RECOVERY</button>
+                </div>
+            </header>
+
+            <!-- Financial Overview -->
+            <div class="financial-overview">
+                <div class="widget financial-summary">
+                    <h3>Financial Intelligence Summary</h3>
+                    <div class="summary-stats">
+                        <div class="stat-card large">
+                            <div class="stat-value">$2,847,192.34</div>
+                            <div class="stat-label">Total Identified Assets</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">187</div>
+                            <div class="stat-label">Bank Accounts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">42</div>
+                            <div class="stat-label">Crypto Wallets</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">63</div>
+                            <div class="stat-label">Investment Accounts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">$892,451.19</div>
+                            <div class="stat-label">Recovered Assets</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asset Categories -->
+            <div class="assets-section">
+                <div class="widget cryptocurrency-assets">
+                    <h3>Cryptocurrency Wallets</h3>
+                    <div class="assets-controls">
+                        <div class="search-box">
+                            <input type="text" id="cryptoSearch" placeholder="Search wallets..." onkeyup="searchCryptoWallets()">
+                        </div>
+                        <select id="cryptoNetworkFilter" onchange="filterCryptoWallets()">
+                            <option value="ALL">ALL NETWORKS</option>
+                            <option value="BITCOIN">Bitcoin</option>
+                            <option value="ETHEREUM">Ethereum</option>
+                            <option value="MONERO">Monero</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="assets-list" id="cryptoWalletsList">
+                        <!-- Crypto wallets will be populated here -->
+                    </div>
+                </div>
+
+                <div class="widget banking-assets">
+                    <h3>Banking & Financial Accounts</h3>
+                    <div class="assets-controls">
+                        <div class="search-box">
+                            <input type="text" id="bankSearch" placeholder="Search accounts..." onkeyup="searchBankAccounts()">
+                        </div>
+                        <select id="bankTypeFilter" onchange="filterBankAccounts()">
+                            <option value="ALL">ALL TYPES</option>
+                            <option value="CHECKING">Checking</option>
+                            <option value="SAVINGS">Savings</option>
+                            <option value="INVESTMENT">Investment</option>
+                            <option value="CREDIT">Credit</option>
+                        </select>
+                    </div>
+                    <div class="assets-list" id="bankAccountsList">
+                        <!-- Bank accounts will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Monitoring -->
+            <div class="monitoring-section">
+                <div class="widget transaction-monitoring">
+                    <h3>Real-time Transaction Monitoring</h3>
+                    <div class="monitoring-controls">
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="monitorCrypto" checked>
+                                Monitor Cryptocurrency
+                            </label>
+                            <label>
+                                <input type="checkbox" id="monitorBanking" checked>
+                                Monitor Banking
+                            </label>
+                            <label>
+                                <input type="checkbox" id="monitorInvestments" checked>
+                                Monitor Investments
+                            </label>
+                        </div>
+                        <button class="btn btn-secondary" onclick="exportFinancialData()">EXPORT DATA</button>
+                    </div>
+                    <div class="transactions-list" id="transactionsList">
+                        <!-- Transactions will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recovery Operations -->
+            <div class="recovery-section">
+                <div class="widget recovery-operations">
+                    <h3>Asset Recovery Operations</h3>
+                    <div class="recovery-stats">
+                        <div class="recovery-metric">
+                            <div class="metric-value">84%</div>
+                            <div class="metric-label">Success Rate</div>
+                        </div>
+                        <div class="recovery-metric">
+                            <div class="metric-value">$892,451</div>
+                            <div class="metric-label">Total Recovered</div>
+                        </div>
+                        <div class="recovery-metric">
+                            <div class="metric-value">47</div>
+                            <div class="metric-label">Operations Completed</div>
+                        </div>
+                    </div>
+                    <div class="recovery-queue">
+                        <h4>Pending Recovery Operations</h4>
+                        <div class="queue-list" id="recoveryQueue">
+                            <!-- Recovery operations will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/financial.js"></script>
+</body>
+</html>
