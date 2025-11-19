@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kowka GEN 7 - Destruction Protocols</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/destruction.css">
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">KOWKA GEN 7</h1>
+                <div class="system-status">
+                    <span class="status-indicator operational"></span>
+                    <span>OPERATIONAL</span>
+                </div>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <img src="assets/icons/dashboard.svg" alt="Dashboard" class="nav-icon">
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="intelligence.html" class="nav-link">
+                        <img src="assets/icons/intelligence.svg" alt="Intelligence" class="nav-icon">
+                        <span>Intelligence</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="systems.html" class="nav-link">
+                        <img src="assets/icons/systems.svg" alt="Systems" class="nav-icon">
+                        <span>Systems</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="financial.html" class="nav-link">
+                        <img src="assets/icons/financial-data.svg" alt="Financial" class="nav-icon">
+                        <span>Financial</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="logs.html" class="nav-link">
+                        <img src="assets/icons/logs.svg" alt="Logs" class="nav-icon">
+                        <span>Logs</span>
+                    </a>
+                </li>
+                <li class="nav-item active destructive">
+                    <a href="destruction.html" class="nav-link">
+                        <img src="assets/icons/destruction-protocol.svg" alt="Destruction" class="nav-icon">
+                        <span>Destruction</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="operator-info">
+                    <div class="operator-name">OPERATOR: [CLASSIFIED]</div>
+                    <div class="session-time">SESSION: 02:15:07</div>
+                </div>
+                <button class="logout-btn" onclick="emergencyLogout()">EMERGENCY LOGOUT</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h2>Emergency Destruction Protocols</h2>
+                <div class="header-actions">
+                    <div class="time-display" id="currentTime">2025-01-19 16:15:07 UTC</div>
+                    <div class="destruction-status">
+                        <span class="status-indicator safe"></span>
+                        <span>SYSTEM SECURE</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Destruction Protocol Levels -->
+            <div class="protocols-section">
+                <div class="widget destruction-protocols">
+                    <h3>Destruction Protocol Levels</h3>
+                    <div class="protocols-grid">
+                        <div class="protocol-card level-low">
+                            <div class="protocol-header">
+                                <h4>LEVEL 1: SANITIZE</h4>
+                                <div class="risk-indicator low">LOW RISK</div>
+                            </div>
+                            <div class="protocol-description">
+                                Secure deletion of operational logs and temporary data. Minimal impact on ongoing operations.
+                            </div>
+                            <div class="protocol-actions">
+                                <ul class="action-list">
+                                    <li>Wipe system logs</li>
+                                    <li>Clear temporary files</li>
+                                    <li>Remove recent artifacts</li>
+                                </ul>
+                                <button class="btn btn-warning" onclick="initiateSanitizeProtocol()">INITIATE SANITIZE</button>
+                            </div>
+                        </div>
+
+                        <div class="protocol-card level-medium">
+                            <div class="protocol-header">
+                                <h4>LEVEL 2: PURGE</h4>
+                                <div class="risk-indicator medium">MEDIUM RISK</div>
+                            </div>
+                            <div class="protocol-description">
+                                Comprehensive data destruction including intelligence caches and agent communications.
+                            </div>
+                            <div class="protocol-actions">
+                                <ul class="action-list">
+                                    <li>Purge intelligence databases</li>
+                                    <li>Destroy cryptographic keys</li>
+                                    <li>Remove persistence mechanisms</li>
+                                </ul>
+                                <button class="btn btn-warning" onclick="initiatePurgeProtocol()">INITIATE PURGE</button>
+                            </div>
+                        </div>
+
+                        <div class="protocol-card level-high">
+                            <div class="protocol-header">
+                                <h4>LEVEL 3: OBLITERATE</h4>
+                                <div class="risk-indicator high">HIGH RISK</div>
+                            </div>
+                            <div class="protocol-description">
+                                Complete system destruction with agent termination and infrastructure demolition.
+                            </div>
+                            <div class="protocol-actions">
+                                <ul class="action-list">
+                                    <li>Terminate all active agents</li>
+                                    <li>Destroy control infrastructure</li>
+                                    <li>Secure wipe all storage</li>
+                                </ul>
+                                <button class="btn btn-destructive" onclick="initiateObliterateProtocol()">INITIATE OBLITERATE</button>
+                            </div>
+                        </div>
+
+                        <div class="protocol-card level-emergency">
+                            <div class="protocol-header">
+                                <h4>LEVEL 4: ARMAGEDDON</h4>
+                                <div class="risk-indicator emergency">EMERGENCY</div>
+                            </div>
+                            <div class="protocol-description">
+                                Total system annihilation. Irreversible destruction of all components and data.
+                            </div>
+                            <div class="protocol-actions">
+                                <ul class="action-list">
+                                    <li>Execute emergency destruct on all systems</li>
+                                    <li>Overwrite storage with random data</li>
+                                    <li>Destroy cryptographic foundations</li>
+                                </ul>
+                                <button class="btn btn-armageddon" onclick="initiateArmageddonProtocol()">INITIATE ARMAGEDDON</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Targeted Destruction -->
+            <div class="targeted-section">
+                <div class="widget targeted-destruction">
+                    <h3>Targeted Agent Destruction</h3>
+                    <div class="destruction-controls">
+                        <div class="control-group">
+                            <select id="agentSelection">
+                                <option value="">SELECT AGENT</option>
+                            </select>
+                            <select id="destructionLevel">
+                                <option value="LOW">SANITIZE</option>
+                                <option value="MEDIUM">PURGE</option>
+                                <option value="HIGH">OBLITERATE</option>
+                                <option value="EMERGENCY">ARMAGEDDON</option>
+                            </select>
+                            <button class="btn btn-destructive" onclick="executeTargetedDestruction()">EXECUTE TARGETED DESTRUCTION</button>
+                        </div>
+                    </div>
+                    <div class="destruction-log" id="targetedDestructionLog">
+                        <!-- Destruction logs will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- System-wide Destruction -->
+            <div class="systemwide-section">
+                <div class="widget systemwide-destruction">
+                    <h3>System-wide Emergency Protocols</h3>
+                    <div class="emergency-controls">
+                        <div class="emergency-card">
+                            <h4>Dead Man's Switch</h4>
+                            <div class="switch-status">
+                                <label class="toggle-switch large">
+                                    <input type="checkbox" id="deadmanSwitch">
+                                    <span class="slider"></span>
+                                </label>
+                                <div class="switch-info">
+                                    <div class="status">INACTIVE</div>
+                                    <div class="description">Automatically triggers destruction if no operator check-in occurs within set timeframe</div>
+                                </div>
+                            </div>
+                            <div class="switch-config">
+                                <label for="deadmanInterval">Check-in Interval (hours):</label>
+                                <input type="number" id="deadmanInterval" value="24" min="1" max="168">
+                                <button class="btn btn-secondary" onclick="configureDeadmanSwitch()">CONFIGURE</button>
+                            </div>
+                        </div>
+
+                        <div class="emergency-card">
+                            <h4>Emergency Broadcast</h4>
+                            <p>Send destruction command to all active agents immediately.</p>
+                            <div class="broadcast-actions">
+                                <select id="broadcastLevel">
+                                    <option value="HIGH">OBLITERATE ALL AGENTS</option>
+                                    <option value="EMERGENCY">ARMAGEDDON PROTOCOL</option>
+                                </select>
+                                <button class="btn btn-armageddon" onclick="executeEmergencyBroadcast()">EXECUTE EMERGENCY BROADCAST</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Destruction History -->
+            <div class="history-section">
+                <div class="widget destruction-history">
+                    <h3>Destruction History</h3>
+                    <div class="history-controls">
+                        <button class="btn btn-secondary" onclick="clearDestructionHistory()">CLEAR HISTORY</button>
+                        <button class="btn btn-secondary" onclick="exportDestructionLogs()">EXPORT LOGS</button>
+                    </div>
+                    <div class="history-list" id="destructionHistory">
+                        <!-- History items will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Destruction Confirmation Modal -->
+    <div id="destructionModal" class="modal">
+        <div class="modal-content destructive">
+            <div class="modal-header">
+                <h3 id="modalTitle">CONFIRM DESTRUCTION PROTOCOL</h3>
+                <span class="close" onclick="closeDestructionModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="warning-message">
+                    <div class="warning-icon">⚠️</div>
+                    <div class="warning-text">
+                        <h4 id="warningTitle">DESTRUCTION PROTOCOL INITIATED</h4>
+                        <p id="warningDescription">This action is irreversible and will result in permanent data loss.</p>
+                    </div>
+                </div>
+                <div class="destruction-details" id="modalDetails">
+                    <!-- Destruction details will be populated here -->
+                </div>
+                <div class="authentication-required">
+                    <label for="operatorPassword">OPERATOR PASSWORD:</label>
+                    <input type="password" id="operatorPassword" placeholder="Enter your password to confirm">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDestructionModal()">CANCEL</button>
+                <button class="btn btn-destructive" id="confirmDestructionBtn" onclick="confirmDestruction()">CONFIRM DESTRUCTION</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/destruction.js"></script>
+</body>
+</html>
