@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kowka GEN 7 - Control Dashboard</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/themes.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">KOWKA GEN 7</h1>
+                <div class="system-status">
+                    <span class="status-indicator operational"></span>
+                    <span>OPERATIONAL</span>
+                </div>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li class="nav-item active">
+                    <a href="dashboard.html" class="nav-link">
+                        <img src="assets/icons/dashboard.svg" alt="Dashboard" class="nav-icon">
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="intelligence.html" class="nav-link">
+                        <img src="assets/icons/intelligence.svg" alt="Intelligence" class="nav-icon">
+                        <span>Intelligence</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="systems.html" class="nav-link">
+                        <img src="assets/icons/systems.svg" alt="Systems" class="nav-icon">
+                        <span>Systems</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="financial.html" class="nav-link">
+                        <img src="assets/icons/financial-data.svg" alt="Financial" class="nav-icon">
+                        <span>Financial</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="logs.html" class="nav-link">
+                        <img src="assets/icons/logs.svg" alt="Logs" class="nav-icon">
+                        <span>Logs</span>
+                    </a>
+                </li>
+                <li class="nav-item destructive">
+                    <a href="destruction.html" class="nav-link">
+                        <img src="assets/icons/destruction-protocol.svg" alt="Destruction" class="nav-icon">
+                        <span>Destruction</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="operator-info">
+                    <div class="operator-name">OPERATOR: [CLASSIFIED]</div>
+                    <div class="session-time">SESSION: 00:45:23</div>
+                </div>
+                <button class="logout-btn" onclick="emergencyLogout()">EMERGENCY LOGOUT</button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="content-header">
+                <h2>Operational Dashboard</h2>
+                <div class="header-actions">
+                    <div class="time-display" id="currentTime">2025-01-19 14:45:23 UTC</div>
+                    <button class="btn btn-primary" onclick="refreshDashboard()">REFRESH</button>
+                </div>
+            </header>
+
+            <!-- Dashboard Widgets -->
+            <div class="dashboard-widgets">
+                <!-- System Status Widget -->
+                <div class="widget system-status-widget">
+                    <h3>System Status</h3>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-label">Cryptographic Core</span>
+                            <span class="status-value operational">OPERATIONAL</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Memory Operations</span>
+                            <span class="status-value operational">STEALTH</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Network Operations</span>
+                            <span class="status-value operational">ACTIVE</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Intelligence Gathering</span>
+                            <span class="status-value operational">COLLECTING</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Agents Widget -->
+                <div class="widget agents-widget">
+                    <h3>Active Agents</h3>
+                    <div class="agents-count" id="activeAgentsCount">0</div>
+                    <div class="agents-list" id="agentsList">
+                        <!-- Dynamic content will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Intelligence Throughput Widget -->
+                <div class="widget throughput-widget">
+                    <h3>Intelligence Throughput</h3>
+                    <div class="throughput-metrics">
+                        <div class="metric">
+                            <span class="metric-label">Financial Data</span>
+                            <span class="metric-value" id="financialThroughput">0 KB/s</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Keylogs</span>
+                            <span class="metric-value" id="keylogThroughput">0 entries/s</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Network Data</span>
+                            <span class="metric-value" id="networkThroughput">0 packets/s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Posture Widget -->
+                <div class="widget security-widget">
+                    <h3>Security Posture</h3>
+                    <div class="security-metrics">
+                        <div class="security-level" id="securityLevel">SECURE</div>
+                        <div class="threat-indicators">
+                            <div class="threat-indicator low" id="threatLow">LOW: 0</div>
+                            <div class="threat-indicator medium" id="threatMedium">MEDIUM: 0</div>
+                            <div class="threat-indicator high" id="threatHigh">HIGH: 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Alerts -->
+                <div class="widget alerts-widget">
+                    <h3>Recent Alerts</h3>
+                    <div class="alerts-list" id="alertsList">
+                        <!-- Dynamic alerts will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="widget actions-widget">
+                    <h3>Quick Actions</h3>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" onclick="deployNewAgent()">DEPLOY AGENT</button>
+                        <button class="btn btn-secondary" onclick="initiateNetworkScan()">NETWORK SCAN</button>
+                        <button class="btn btn-warning" onclick="rotateEncryptionKeys()">ROTATE KEYS</button>
+                        <button class="btn btn-destructive" onclick="showDestructionModal()">EMERGENCY DESTRUCT</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-time Data Visualization -->
+            <div class="visualization-section">
+                <div class="widget full-width">
+                    <h3>Agent Geographic Distribution</h3>
+                    <div id="agentMap" class="map-visualization">
+                        <!-- Map visualization will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript Imports -->
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/dashboard.js"></script>
+    <script src="assets/js/visualizations.js"></script>
+    <script src="api/api.js"></script>
+</body>
+</html>
