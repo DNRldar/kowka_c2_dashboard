@@ -189,4 +189,51 @@
                                 <div class="form-group">
                                     <label for="c2Channels">C2 Channels</label>
                                     <select id="c2Channels" multiple>
-                                        <option value="github" selected>GitHub
+                                        <option value="github" selected>GitHub</option>
+                                        <option value="cloudflare" selected>CloudFlare</option>
+                                        <option value="websocket">WebSocket</option>
+                                        <option value="dns">DNS Tunneling</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rotationInterval">Rotation Interval (minutes)</label>
+                                    <input type="number" id="rotationInterval" value="300" min="60" max="1440">
+                                </div>
+                                <button class="btn btn-primary" onclick="saveNetworkConfig()">SAVE NETWORK CONFIG</button>
+                            </div>
+                        </div>
+                        
+                        <div id="securityTab" class="tab-content">
+                            <div class="config-form">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="enableSteganography" checked>
+                                        Enable Steganography
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="enablePolymorphic" checked>
+                                        Enable Polymorphic Code
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cryptoAlgorithm">Cryptographic Algorithm</label>
+                                    <select id="cryptoAlgorithm">
+                                        <option value="kyber-aes-hybrid">Kyber-768 + AES-256-GCM</option>
+                                        <option value="x25519-chacha20">X25519 + ChaCha20-Poly1305</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" onclick="saveSecurityConfig()">SAVE SECURITY CONFIG</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/systems.js"></script>
+</body>
+</html>
