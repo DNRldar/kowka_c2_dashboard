@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kowka GEN 7 - Intelligence Center</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/intelligence.css">
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">KOWKA GEN 7</h1>
+                <div class="system-status">
+                    <span class="status-indicator operational"></span>
+                    <span>OPERATIONAL</span>
+                </div>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <img src="assets/icons/dashboard.svg" alt="Dashboard" class="nav-icon">
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="intelligence.html" class="nav-link">
+                        <img src="assets/icons/intelligence.svg" alt="Intelligence" class="nav-icon">
+                        <span>Intelligence</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="systems.html" class="nav-link">
+                        <img src="assets/icons/systems.svg" alt="Systems" class="nav-icon">
+                        <span>Systems</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="financial.html" class="nav-link">
+                        <img src="assets/icons/financial-data.svg" alt="Financial" class="nav-icon">
+                        <span>Financial</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="logs.html" class="nav-link">
+                        <img src="assets/icons/logs.svg" alt="Logs" class="nav-icon">
+                        <span>Logs</span>
+                    </a>
+                </li>
+                <li class="nav-item destructive">
+                    <a href="destruction.html" class="nav-link">
+                        <img src="assets/icons/destruction-protocol.svg" alt="Destruction" class="nav-icon">
+                        <span>Destruction</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="operator-info">
+                    <div class="operator-name">OPERATOR: [CLASSIFIED]</div>
+                    <div class="session-time">SESSION: 01:15:47</div>
+                </div>
+                <button class="logout-btn" onclick="emergencyLogout()">EMERGENCY LOGOUT</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h2>Intelligence Operations Center</h2>
+                <div class="header-actions">
+                    <div class="time-display" id="currentTime">2025-01-19 15:15:47 UTC</div>
+                    <button class="btn btn-primary" onclick="refreshIntelligenceData()">REFRESH INTELLIGENCE</button>
+                </div>
+            </header>
+
+            <!-- Intelligence Collection Controls -->
+            <div class="control-section">
+                <div class="widget collection-controls">
+                    <h3>Active Collection Modules</h3>
+                    <div class="module-grid">
+                        <div class="module-card">
+                            <div class="module-header">
+                                <h4>Keylogger</h4>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="keyloggerToggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="module-stats">
+                                <span class="stat">24,189 keystrokes captured</span>
+                                <span class="stat">187 credentials extracted</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="configureKeylogger()">CONFIGURE</button>
+                        </div>
+
+                        <div class="module-card">
+                            <div class="module-header">
+                                <h4>Screen Capture</h4>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="screencapToggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="module-stats">
+                                <span class="stat">1,247 screenshots taken</span>
+                                <span class="stat">43.2 GB stored</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="configureScreencap()">CONFIGURE</button>
+                        </div>
+
+                        <div class="module-card">
+                            <div class="module-header">
+                                <h4>Network Sniffing</h4>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="networksniffToggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="module-stats">
+                                <span class="stat">892 MB network data</span>
+                                <span class="stat">14,328 packets analyzed</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="configureNetworksniff()">CONFIGURE</button>
+                        </div>
+
+                        <div class="module-card">
+                            <div class="module-header">
+                                <h4>Browser Extraction</h4>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="browserextractToggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="module-stats">
+                                <span class="stat">284 passwords recovered</span>
+                                <span class="stat">1,892 cookies extracted</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="configureBrowserextract()">CONFIGURE</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Intelligence Data Display -->
+            <div class="data-section">
+                <div class="widget intelligence-data">
+                    <h3>Recent Intelligence Feed</h3>
+                    <div class="intelligence-filters">
+                        <select id="dataTypeFilter" onchange="filterIntelligenceData()">
+                            <option value="ALL">ALL DATA TYPES</option>
+                            <option value="KEYLOGS">Keylogs</option>
+                            <option value="SCREENSHOTS">Screenshots</option>
+                            <option value="NETWORK">Network Data</option>
+                            <option value="BROWSER">Browser Data</option>
+                            <option value="DOCUMENTS">Documents</option>
+                        </select>
+                        <select id="agentFilter" onchange="filterIntelligenceData()">
+                            <option value="ALL">ALL AGENTS</option>
+                        </select>
+                        <input type="text" id="intelligenceSearch" placeholder="Search intelligence..." onkeyup="searchIntelligence()">
+                    </div>
+                    <div class="intelligence-list" id="intelligenceList">
+                        <!-- Intelligence items will be populated here -->
+                    </div>
+                </div>
+
+                <div class="widget intelligence-analysis">
+                    <h3>Pattern Analysis</h3>
+                    <div class="analysis-results">
+                        <div class="analysis-item">
+                            <h4>Behavioral Patterns</h4>
+                            <div class="pattern-list">
+                                <div class="pattern">High financial activity detected: 14:30-16:00 UTC daily</div>
+                                <div class="pattern">Encrypted communications: Signal app usage increasing</div>
+                                <div class="pattern">Multiple cryptocurrency wallet accesses</div>
+                            </div>
+                        </div>
+                        <div class="analysis-item">
+                            <h4>Security Posture</h4>
+                            <div class="security-assessment">
+                                <div class="assessment-item">
+                                    <span class="label">Target Awareness:</span>
+                                    <span class="value low">LOW</span>
+                                </div>
+                                <div class="assessment-item">
+                                    <span class="label">Defense Strength:</span>
+                                    <span class="value medium">MEDIUM</span>
+                                </div>
+                                <div class="assessment-item">
+                                    <span class="label">Risk of Detection:</span>
+                                    <span class="value low">LOW</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Intelligence Metrics -->
+            <div class="metrics-section">
+                <div class="widget intelligence-metrics">
+                    <h3>Collection Metrics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value" id="totalDataCollected">247.8 GB</div>
+                            <div class="metric-label">Total Data Collected</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="activeCollections">18</div>
+                            <div class="metric-label">Active Collections</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="successRate">98.7%</div>
+                            <div class="metric-label">Success Rate</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="dataThroughput">4.2 MB/s</div>
+                            <div class="metric-label">Data Throughput</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/intelligence.js"></script>
+</body>
+</html>
