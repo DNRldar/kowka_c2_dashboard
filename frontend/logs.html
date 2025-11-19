@@ -1,1 +1,93 @@
 
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kowka GEN 7 - System Logs</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/logs.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation Sidebar (same as dashboard) -->
+        <nav class="sidebar">
+            <!-- Sidebar content identical to dashboard.html -->
+        </nav>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h2>System Logs & Audit Trail</h2>
+                <div class="header-actions">
+                    <div class="log-controls">
+                        <select id="logLevelFilter" onchange="filterLogs()">
+                            <option value="ALL">ALL LEVELS</option>
+                            <option value="DEBUG">DEBUG</option>
+                            <option value="INFO">INFO</option>
+                            <option value="WARNING">WARNING</option>
+                            <option value="ERROR">ERROR</option>
+                            <option value="CRITICAL">CRITICAL</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="exportLogs()">EXPORT LOGS</button>
+                        <button class="btn btn-warning" onclick="clearLogs()">CLEAR LOGS</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Log Search and Filters -->
+            <div class="log-filters">
+                <div class="search-box">
+                    <input type="text" id="logSearch" placeholder="Search logs..." onkeyup="searchLogs()">
+                </div>
+                <div class="filter-options">
+                    <label>
+                        <input type="checkbox" id="showTimestamps" checked onchange="refreshLogView()">
+                        Show Timestamps
+                    </label>
+                    <label>
+                        <input type="checkbox" id="autoRefresh" checked onchange="toggleAutoRefresh()">
+                        Auto-refresh (5s)
+                    </label>
+                </div>
+            </div>
+
+            <!-- Log Display Area -->
+            <div class="log-container">
+                <div class="log-header">
+                    <div class="log-column timestamp">Timestamp</div>
+                    <div class="log-column level">Level</div>
+                    <div class="log-column module">Module</div>
+                    <div class="log-column message">Message</div>
+                    <div class="log-column agent">Agent ID</div>
+                </div>
+                <div class="log-entries" id="logEntries">
+                    <!-- Log entries will be dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Log Statistics -->
+            <div class="log-statistics">
+                <div class="stat-card">
+                    <h4>Total Log Entries</h4>
+                    <div class="stat-value" id="totalLogEntries">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Errors Today</h4>
+                    <div class="stat-value error" id="errorCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Warnings Today</h4>
+                    <div class="stat-value warning" id="warningCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Active Sessions</h4>
+                    <div class="stat-value" id="activeSessions">1</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/logs.js"></script>
+</body>
+</html>
